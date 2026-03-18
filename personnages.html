@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcanum — Fiches Personnages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+:root{--bg:#f7f6f3;--sf:#fff;--sf2:#f2f1ee;--sf3:#eae9e5;--ink:#1a1917;--ink2:#6b6861;--ink3:#b0afa9;--ln:#e4e3df;--ln2:#d0cfc9;--red:#c0392b;--grn:#27624a;--blu:#2563ab;--r:8px;--rl:12px;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--sw:320px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:var(--text-base);line-height:1.5;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--ln2);border-radius:99px}
+.topbar{height:var(--topbar-h);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--ln);background:var(--sf);gap:10px}
+.brand{font-size:var(--text-sm);font-weight:500;letter-spacing:.1em;color:var(--ink);text-transform:uppercase}
+.topbar-r{display:flex;align-items:center;gap:6px}
+.workspace{display:flex;flex:1;overflow:hidden}
+.sidebar{width:var(--sw);flex-shrink:0;border-right:1px solid var(--ln);background:var(--sf);display:flex;flex-direction:column;overflow:hidden}
+.sbh{padding:12px 14px 8px;border-bottom:1px solid var(--ln);display:flex;flex-direction:column;gap:7px}
+.sw{position:relative}.sw svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:var(--ink3);fill:none;stroke-width:1.8;pointer-events:none}
+.sinp{width:100%;padding:7px 9px 7px 30px;border:1px solid var(--ln);border-radius:var(--r);font-family:var(--sans);font-size:var(--text-sm);background:var(--sf2);color:var(--ink);outline:none;transition:border-color .15s,background .15s}
+.sinp:focus{border-color:var(--ink);background:var(--sf)}.sinp::placeholder{color:var(--ink3)}
+.fr{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.chip{padding:3px 9px;border-radius:99px;border:1px solid var(--ln);font-size:var(--text-xs);cursor:pointer;background:transparent;color:var(--ink2);font-family:var(--sans);transition:all .12s;white-space:nowrap}
+.chip:hover{border-color:var(--ink2)}.chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ssel{margin-left:auto;font-size:var(--text-xs);padding:3px 5px;border:1px solid var(--ln);border-radius:5px;background:transparent;color:var(--ink2);font-family:var(--sans);outline:none;cursor:pointer}
+.bar2{display:flex;align-items:center;justify-content:space-between}
+.cnt{font-size:var(--text-xs);color:var(--ink3)}
+.vt{display:flex;gap:3px}
+.vtb{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:5px;border:1px solid var(--ln);cursor:pointer;background:transparent;color:var(--ink3);transition:all .12s}
+.vtb svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.vtb.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.clist{flex:1;overflow-y:auto;padding:7px}
+.clist.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.clist.list{display:flex;flex-direction:column;gap:2px}
+.nbtn{display:flex;align-items:center;gap:7px;padding:7px 14px;margin:7px 7px 2px;border-radius:var(--r);border:1px dashed var(--ln2);background:transparent;color:var(--ink2);font-family:var(--sans);font-size:var(--text-sm);cursor:pointer;transition:all .12s;width:calc(100% - 14px)}
+.nbtn:hover{border-color:var(--ink);color:var(--ink);background:var(--sf2)}.nbtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.emsg{text-align:center;color:var(--ink3);font-size:var(--text-sm);padding:40px 16px;line-height:2}
+.crow{display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:var(--r);cursor:pointer;transition:background .12s;border:1px solid transparent}
+.crow:hover{background:var(--sf2)}.crow.active{background:var(--sf2);border-color:var(--ln2)}
+.cav{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:var(--sf3);border:1px solid var(--ln);display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);color:var(--ink3);overflow:hidden}
+.cav img{width:100%;height:100%;object-fit:cover}
+.cri{flex:1;min-width:0}.crn{font-size:var(--text-sm);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crs{font-size:var(--text-xs);color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cgrid{border:1px solid var(--ln);border-radius:var(--rl);padding:10px 8px;cursor:pointer;background:var(--sf);transition:border-color .15s;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+.cgrid:hover{border-color:var(--ln2)}.cgrid.active{border-color:var(--ink);background:var(--sf2)}
+.cgrid .cav{width:42px;height:42px;font-size:var(--text-base)}.cgn{font-size:var(--text-xs);font-weight:500;color:var(--ink);line-height:1.3}
+.cgs{font-size:var(--text-xs);color:var(--ink3)}.rpill{font-size:var(--text-xs);padding:2px 6px;border-radius:99px;background:var(--sf3);color:var(--ink2);margin-top:1px}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.welc{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px}
+.welc h2{font-size:18px;font-weight:300;color:var(--ink2);letter-spacing:.1em;text-transform:uppercase}.welc p{font-size:var(--text-sm);color:var(--ink3)}
+.ftb{height:var(--topbar-h);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--ln);gap:10px;background:var(--sf)}
+.ftbl{display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0}
+.ctinp{font-family:var(--sans);font-size:var(--text-base);font-weight:500;color:var(--ink);border:none;background:transparent;outline:none;min-width:80px;max-width:240px}
+.ctinp::placeholder{color:var(--ink3)}
+.rbadge{font-size:var(--text-xs);color:var(--ink2);background:var(--sf2);padding:2px 8px;border-radius:99px;border:1px solid var(--ln);white-space:nowrap;flex-shrink:0}
+.ftbr{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.tnav{display:flex;padding:0 24px;border-bottom:1px solid var(--ln);background:var(--sf);overflow-x:auto;flex-shrink:0}
+.tnav::-webkit-scrollbar{height:0}
+.tbtn{padding:11px 14px;font-size:var(--text-xs);font-weight:400;color:var(--ink3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;font-family:var(--sans);white-space:nowrap;transition:color .15s;margin-bottom:-1px}
+.tbtn:hover{color:var(--ink2)}.tbtn.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.fcont{flex:1;overflow-y:auto;padding:24px}.tp{display:none}.tp.active{display:block}
+.fg{margin-bottom:24px}
+.fgl{font-size:var(--text-xs);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.fgl::after{content:'';flex:1;height:1px;background:var(--ln)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
+.fi{display:flex;flex-direction:column;gap:3px}.fi label{font-size:var(--text-xs);color:var(--ink2)}
+.fi input,.fi select,.fi textarea{font-family:var(--sans);font-size:var(--text-sm);color:var(--ink);background:var(--sf);border:1px solid var(--ln);border-radius:var(--r);padding:7px 9px;outline:none;transition:border-color .15s;width:100%}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--ink)}
+.fi input::placeholder,.fi textarea::placeholder{color:var(--ink3)}
+.fi textarea{resize:vertical;min-height:68px;line-height:1.6}.fi select{cursor:pointer}
+.yn{display:flex;align-items:center;gap:7px;height:34px}.yn label{font-size:var(--text-xs);color:var(--ink2);flex:1}
+.tog{position:relative;width:32px;height:17px;flex-shrink:0}.tog input{opacity:0;width:0;height:0;position:absolute}
+.tgt{position:absolute;inset:0;background:var(--ln2);border-radius:99px;cursor:pointer;transition:background .2s}
+.tog input:checked+.tgt{background:var(--ink)}
+.tgk{position:absolute;top:2px;left:2px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+.tog input:checked~.tgk{transform:translateX(15px)}
+.avsec{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.avup{width:72px;height:72px;border-radius:50%;border:2px dashed var(--ln2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;transition:border-color .15s;position:relative}
+.avup:hover{border-color:var(--ink2)}.avup img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.avup svg{width:18px;height:18px;stroke:var(--ink3);fill:none;stroke-width:1.5;z-index:1}
+.avup input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.avmeta{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.trgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px}
+.trrow{display:grid;grid-template-columns:82px 1fr 82px;align-items:center;gap:7px;padding:3px 0}
+.trl{text-align:right;font-size:var(--text-xs);color:var(--ink2)}.trr{font-size:var(--text-xs);color:var(--ink2)}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--ln);border-radius:99px;outline:none;cursor:pointer;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--sf);cursor:pointer}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.sb{display:flex;flex-direction:column;gap:5px}.sh{display:flex;justify-content:space-between}
+.sn{font-size:var(--text-xs);color:var(--ink2)}.sv{font-family:var(--mono);font-size:var(--text-xs);color:var(--ink)}
+.sbar{height:3px;background:var(--ln);border-radius:99px}.sfill{height:100%;background:var(--ink);border-radius:99px;transition:width .2s}
+.vlayout{display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:start}
+.vpad{aspect-ratio:1;border:1px solid var(--ln);border-radius:var(--rl);position:relative;cursor:crosshair;background:var(--bg)}
+.vaxh,.vaxv{position:absolute;background:var(--ln)}.vaxh{width:100%;height:1px;top:50%;left:0}.vaxv{width:1px;height:100%;left:50%;top:0}
+.vlb{position:absolute;font-size:var(--text-xs);color:var(--ink3)}.vlb.t{top:7px;left:50%;transform:translateX(-50%)}.vlb.b{bottom:7px;left:50%;transform:translateX(-50%)}.vlb.l{left:7px;top:50%;transform:translateY(-50%)}.vlb.r{right:7px;top:50%;transform:translateY(-50%)}
+.vdot{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--ink);border:2px solid var(--sf);transform:translate(-50%,-50%);pointer-events:none}
+.vflds{display:flex;flex-direction:column;gap:9px}
+
+/* ── RELATIONS ── */
+.rel-entries{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.rel-entry{display:grid;grid-template-columns:150px 1fr 28px;gap:6px;align-items:center;padding:8px 10px;border:1px solid var(--ln);border-radius:var(--r);background:var(--sf)}
+.rel-entry:hover{border-color:var(--ln2)}
+.rtype{font-family:var(--sans);font-size:var(--text-sm);color:var(--ink2);border:none;background:transparent;outline:none;cursor:pointer;padding:0;width:100%}
+.rtype:focus{color:var(--ink)}
+.rchwrap{position:relative}
+.rchinp{width:100%;font-family:var(--sans);font-size:var(--text-sm);color:var(--ink);border:none;background:transparent;outline:none;padding:0 22px 0 0}
+.rchinp::placeholder{color:var(--ink3)}
+.linked-tag{position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:9px;color:var(--blu);background:rgba(37,99,171,.1);padding:1px 5px;border-radius:4px;pointer-events:none}
+.rnoteinp{grid-column:1/-1;font-family:var(--sans);font-size:var(--text-xs);color:var(--ink2);border:none;border-top:1px solid var(--ln);background:transparent;outline:none;padding:5px 0 0;width:100%}
+.rnoteinp::placeholder{color:var(--ink3)}
+.drel{width:26px;height:26px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:5px;color:var(--ink3);transition:all .12s}
+.drel:hover{color:var(--red);background:rgba(192,57,43,.07)}.drel svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.addrel{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1px dashed var(--ln2);border-radius:var(--r);background:transparent;color:var(--ink3);font-family:var(--sans);font-size:var(--text-sm);cursor:pointer;transition:all .12s;width:100%}
+.addrel:hover{border-color:var(--ink2);color:var(--ink2)}.addrel svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* AUTOCOMPLETE */
+.acdrop{position:absolute;top:calc(100% + 4px);left:-10px;right:-10px;background:var(--sf);border:1px solid var(--ln2);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.09);z-index:300;max-height:190px;overflow-y:auto}
+.acitem{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;transition:background .1s}
+.acitem:hover,.acitem.sel{background:var(--sf2)}
+.acav{width:22px;height:22px;border-radius:50%;border:1px solid var(--ln);background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--ink3);flex-shrink:0;overflow:hidden}
+.acav img{width:100%;height:100%;object-fit:cover}
+.acname{font-size:var(--text-sm);color:var(--ink)}.acrole{font-size:var(--text-xs);color:var(--ink3);margin-left:auto}
+
+/* GRAPH */
+.gWrap{border:1px solid var(--ln);border-radius:var(--rl);background:var(--sf);overflow:hidden;position:relative}
+.gtb{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--ln)}
+.glb{font-size:var(--text-xs);color:var(--ink3)}
+#gsvg{width:100%;display:block;cursor:grab;user-select:none}
+#gsvg:active{cursor:grabbing}
+.glegend{display:flex;flex-wrap:wrap;gap:5px 12px;padding:10px 14px;border-top:1px solid var(--ln)}
+.gli{display:flex;align-items:center;gap:5px;font-size:var(--text-xs);color:var(--ink3)}
+.gld{width:8px;height:8px;border-radius:50%}
+
+/* CHAPS */
+.chtk{display:flex;flex-wrap:wrap;gap:5px}
+.chb{width:34px;height:34px;border-radius:var(--r);border:1px solid var(--ln);background:transparent;font-family:var(--mono);font-size:var(--text-xs);color:var(--ink3);cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.chb:hover{border-color:var(--ink2);color:var(--ink2)}.chb.active{background:var(--ink);border-color:var(--ink);color:var(--sf)}
+
+/* APT */
+.apt{width:100%;border-collapse:collapse}.apt th{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:400;padding:6px 8px;text-align:left;border-bottom:1px solid var(--ln)}.apt td{padding:3px 5px;vertical-align:top}.apt td:first-child{font-size:var(--text-xs);color:var(--ink2);padding-left:0;width:100px;white-space:nowrap}.apt td input{width:100%;font-family:var(--sans);font-size:var(--text-sm);color:var(--ink);background:transparent;border:1px solid transparent;border-radius:5px;padding:5px 6px;outline:none;transition:border-color .12s,background .12s}.apt td input:focus{border-color:var(--ln2);background:var(--sf)}
+
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);font-family:var(--sans);font-size:var(--text-sm);font-weight:500;cursor:pointer;border:1px solid;transition:all .12s}
+.btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.bto{background:transparent;border-color:var(--ln2);color:var(--ink2)}.bto:hover{border-color:var(--ink);color:var(--ink)}
+.btd{background:var(--ink);border-color:var(--ink);color:var(--bg)}.btd:hover{background:#333}
+.btg{background:transparent;border-color:transparent;color:var(--ink3);padding:6px 9px}.btg:hover{color:var(--ink);background:var(--sf2)}
+.btdng{background:transparent;border-color:transparent;color:var(--ink3);padding:6px 9px}.btdng:hover{color:var(--red);background:rgba(192,57,43,.06)}
+.btsm{padding:5px 9px;font-size:var(--text-xs)}
+.fwrap{position:relative;display:inline-flex}.fwrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.modal-bg{position:fixed;inset:0;background:rgba(26,25,23,.4);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal{background:var(--sf);border-radius:var(--rl);padding:22px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.modal h3{font-size:var(--text-base);font-weight:500;margin-bottom:7px}.modal p{font-size:var(--text-sm);color:var(--ink2);line-height:1.7;margin-bottom:18px}.modal-acts{display:flex;justify-content:flex-end;gap:7px}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:var(--bg);font-size:var(--text-sm);padding:9px 14px;border-radius:var(--r);z-index:999;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.cnote{font-size:var(--text-xs);color:var(--ink3);background:var(--sf2);border-radius:var(--r);padding:7px 11px;margin-bottom:11px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">Arcanum</span>
+  <div class="topbar-r">
+    <div class="fwrap">
+      <button class="btn bto btsm"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Importer</button>
+      <input type="file" accept=".json" onchange="importJSON(event)">
+    </div>
+    <button class="btn bto btsm" onclick="exportAll()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exporter tout</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar">
+    <div class="sbh">
+      <div class="sw">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="sinp" id="searchInput" placeholder="Rechercher…" oninput="renderList()">
+      </div>
+      <div class="fr">
+        <button class="chip active" onclick="setFilter('all',this)">Tous</button>
+        <button class="chip" onclick="setFilter('protagoniste',this)">Protas</button>
+        <button class="chip" onclick="setFilter('antagoniste',this)">Antago</button>
+        <button class="chip" onclick="setFilter('secondaire',this)">Sec.</button>
+        <select class="ssel" id="sortSel" onchange="renderList()">
+          <option value="name">A–Z</option>
+          <option value="recent">Récent</option>
+          <option value="age">Âge</option>
+        </select>
+      </div>
+      <div class="bar2">
+        <span class="cnt" id="charCount"></span>
+        <div class="vt">
+          <button class="vtb active" id="vtl" onclick="setView('list',this)" title="Liste"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+          <button class="vtb" id="vtg" onclick="setView('grid',this)" title="Grille"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <button class="nbtn" onclick="newChar()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouveau personnage</button>
+    <div class="clist list" id="charList"></div>
+  </aside>
+  <main class="main" id="mainArea">
+    <div class="welc"><h2>Arcanum</h2><p>Sélectionnez ou créez un personnage.</p></div>
+  </main>
+</div>
+
+<script>
+const TRAITS=[['Introverti','Extraverti'],['Optimiste','Pessimiste'],['Joyeux','Triste'],['Antipathique','Sympathique'],['Blagueur','Sévère'],['Généreux','Avare'],['Peureux','Courageux'],['Hypocrite','Sincère'],['Naïf','Méfiant'],['Froid','Chaleureux'],['Désorganisé','Organisé'],['Impatient','Patient'],['Solitaire','Sociable'],['Distrait','Attentif'],['Timide','Avenant'],['Maladroit','Dégourdi']];
+const STATS=[['Force physique','phys'],['Intelligence','intel'],['Force mentale','mental'],['Vitesse','vite'],['Endurance','endu'],['Empathie','empa'],['Charisme','chari'],['Dextérité','dext']];
+const APTS=['Physique','Mentale','Interpersonnelle','Magique'];
+const RTYPES=['Père / Mère','Mère / Père','Grand-Parent','Frère / Sœur','Enfant','Oncle / Tante','Cousin·e','Meilleur·e ami·e','Ami·e','Connaissance','Collègue','Mentor','Élève','Partenaire','Ex-partenaire','Rival·e','Ennemi·e','Allié·e','Subordonné·e','Supérieur·e','Crush','Autre'];
+const RCOLORS={'Père / Mère':'#7c6f5a','Mère / Père':'#7c6f5a','Grand-Parent':'#9b8b6e','Frère / Sœur':'#9b8b6e','Enfant':'#7c6f5a','Meilleur·e ami·e':'#27624a','Ami·e':'#3d8a65','Connaissance':'#b0afa9','Partenaire':'#c0392b','Ex-partenaire':'#e67e22','Rival·e':'#d35400','Ennemi·e':'#c0392b','Allié·e':'#2563ab','Mentor':'#6d4c9f','Élève':'#6d4c9f','Collègue':'#4a90a4','Crush':'#c0392b'};
+function rCol(t){return RCOLORS[t]||'#b0afa9';}
+
+let chars={},currentId=null,viewMode='list',activeFilter='all';
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+function defChar(){
+  const traits={},stats={},chaps={};
+  TRAITS.forEach((_,i)=>traits[i]=50);STATS.forEach(([,k])=>stats[k]=50);
+  for(let i=1;i<=20;i++) chaps[i]=false;
+  return {id:uid(),createdAt:Date.now(),image:'',nom:'',prenom:'',surnom:'',age:'',genre:'',lieuNaissance:'',lieuVie:'',nationalite:'',role:'',typeRole:'',notes:'',teint:'',taille:'',corpulence:'',posture:'',peau:'',coupeCh:'',couleurCh:'',formesYeux:'',couleurYeux:'',formesVisage:'',nez:'',dentition:'',pilosite:'',cicatrices:'',tatouages:'',piercings:'',style:'',accessoires:'',distinctif:'',traits,notePerso:'',voiceX:50,voiceY:50,expression:'Loquace',langage:'Neutre',argot:false,accent:false,ticsLangage:'',langageCorporel:'',rire:'',langueSecondaire:'',stats,aptPhys:'',faiPhys:'',aptMent:'',faiMent:'',aptInter:'',faiInter:'',aptMag:'',faiMag:'',valeurs:'',horreur:'',mensonge:'',justice:'',capTransgresser:false,transgression:'',modeles:'',commentSeVoit:'',commentVeutEtre:'',qualAimees:'',defauts:'',popularite:false,casanier:false,aime:'',deteste:'',emploi:'',satisfaitEmploi:false,lieuPrefere:'',objetPrefere:'',reveil:'',coucher:'',journee:'',ticsComport:'',mauvaisHabitudes:'',elementPrefere:'',changerVie:'',satisfaitVie:false,relations:[],chaps,passe:'',evolution:''};
+}
+
+function save(){localStorage.setItem('arcanum_v3',JSON.stringify(chars));}
+function load(){try{const d=localStorage.getItem('arcanum_v3');if(d)chars=JSON.parse(d);}catch(e){}}
+function migrate(){
+  try{const old=localStorage.getItem('arcanum_v2');if(old&&!localStorage.getItem('arcanum_v3')){const data=JSON.parse(old);Object.values(data).forEach(c=>{if(!c.relations)c.relations=[];if(c.rels){Object.entries(c.rels).forEach(([k,v])=>{if(v)c.relations.push({id:uid(),type:'Autre',charId:'',charName:v,note:k});});delete c.rels;}chars[c.id]=c;});save();}}catch(e){}
+}
+
+function charName(c){return [c.prenom,c.nom].filter(Boolean).join(' ')||'Sans nom';}
+function initials(c){return((c.prenom?c.prenom[0]:'')+(c.nom?c.nom[0]:'')).toUpperCase()||'?';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function avHtml(c,sz=30){const s=`width:${sz}px;height:${sz}px`;return c.image?`<div class="cav" style="${s}"><img src="${c.image}" alt=""></div>`:`<div class="cav" style="${s}">${initials(c)}</div>`;}
+
+function setFilter(f,el){activeFilter=f;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();}
+function setView(m,el){viewMode=m;document.querySelectorAll('.vtb').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();}
+
+function renderList(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const sort=document.getElementById('sortSel').value;
+  const L=document.getElementById('charList'),C=document.getElementById('charCount');
+  let items=Object.values(chars);
+  if(activeFilter!=='all') items=items.filter(c=>{const r=(c.typeRole||c.role||'').toLowerCase();return activeFilter==='protagoniste'?r.includes('protago')||r.includes('héros'):activeFilter==='antagoniste'?r.includes('antago'):r.includes('secondaire');});
+  if(q) items=items.filter(c=>[c.nom,c.prenom,c.surnom,c.role,c.lieuNaissance,c.emploi].join(' ').toLowerCase().includes(q));
+  items.sort((a,b)=>sort==='name'?charName(a).localeCompare(charName(b),'fr'):sort==='recent'?(b.createdAt||0)-(a.createdAt||0):(parseInt(a.age)||999)-(parseInt(b.age)||999));
+  C.textContent=items.length+' personnage'+(items.length!==1?'s':'');
+  L.className='clist '+(viewMode==='grid'?'grid':'list');
+  if(!items.length){L.innerHTML='<div class="emsg">Aucun résultat.</div>';return;}
+  if(viewMode==='grid'){
+    L.innerHTML=items.map(c=>`<div class="cgrid${c.id===currentId?' active':''}" onclick="selectChar('${c.id}')">${avHtml(c,42)}<div class="cgn">${esc(charName(c))}</div><div class="cgs">${c.age?c.age+' ans':''}</div><div class="rpill">${esc(c.role||'—')}</div></div>`).join('');
+  } else {
+    L.innerHTML=items.map(c=>`<div class="crow${c.id===currentId?' active':''}" onclick="selectChar('${c.id}')">${avHtml(c,30)}<div class="cri"><div class="crn">${esc(charName(c))}</div><div class="crs">${esc([c.role,c.lieuNaissance].filter(Boolean).join(' · ')||'—')}</div></div></div>`).join('');
+  }
+}
+
+function newChar(){const c=defChar();chars[c.id]=c;currentId=c.id;save();renderList();renderForm();}
+function selectChar(id){if(currentId&&id!==currentId)collectFields();currentId=id;renderList();renderForm();}
+function deleteChar(id){modal('Supprimer ce personnage ?','Cette action est irréversible.',()=>{delete chars[id];currentId=null;save();renderList();document.getElementById('mainArea').innerHTML='<div class="welc"><h2>Arcanum</h2><p>Sélectionnez un personnage.</p></div>';});}
+
+function collectFields(){
+  if(!currentId)return;const c=chars[currentId];
+  document.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f;if(el.type==='checkbox')c[f]=el.checked;else c[f]=el.value;});
+  TRAITS.forEach((_,i)=>{const el=document.getElementById('tr'+i);if(el)c.traits[i]=+el.value;});
+  STATS.forEach(([,k])=>{const el=document.getElementById('st_'+k);if(el)c.stats[k]=+el.value;});
+  for(let i=1;i<=20;i++){const el=document.getElementById('ch'+i);if(el)c.chaps[i]=el.classList.contains('active');}
+  const vx=document.getElementById('vx'),vy=document.getElementById('vy');
+  if(vx)c.voiceX=+vx.value;if(vy)c.voiceY=+vy.value;
+}
+
+function saveChar(){collectFields();save();renderList();toast('Sauvegardé ✓');}
+function liveSync(f,v){if(!currentId)return;chars[currentId][f]=v;renderList();}
+
+function handleImage(evt){
+  const file=evt.target.files[0];if(!file||!currentId)return;
+  const r=new FileReader();r.onload=e=>{chars[currentId].image=e.target.result;const img=document.getElementById('avImg');const ph=document.getElementById('avPh');if(img){img.src=e.target.result;img.style.display='block';}if(ph)ph.style.display='none';renderList();};r.readAsDataURL(file);
+}
+function removeImage(){if(!currentId)return;chars[currentId].image='';const img=document.getElementById('avImg');const ph=document.getElementById('avPh');if(img){img.src='';img.style.display='none';}if(ph)ph.style.display='flex';renderList();}
+
+function exportAll(){const b=new Blob([JSON.stringify(chars,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='arcanum.json';a.click();}
+function exportChar(id){const c=chars[id];const n=charName(c).replace(/\s+/g,'_');const b=new Blob([JSON.stringify(c,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n+'.json';a.click();}
+function importJSON(evt){const file=evt.target.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.id&&d.nom!==undefined){chars[d.id]=d;currentId=d.id;}else{Object.assign(chars,d);const ids=Object.keys(d);if(ids.length)currentId=ids[0];}save();renderList();if(currentId)renderForm();toast('Importé !');}catch{alert('Fichier invalide');}evt.target.value='';};r.readAsText(file);}
+
+// ── RELATIONS ──
+function addRelation(){if(!currentId)return;chars[currentId].relations.push({id:uid(),type:'Ami·e',charId:'',charName:'',note:''});renderRelations();}
+function removeRelation(rid){if(!currentId)return;chars[currentId].relations=chars[currentId].relations.filter(r=>r.id!==rid);renderRelations();if(document.getElementById('tp_reseau')?.classList.contains('active'))renderGraph();}
+function updateRel(rid,field,val){if(!currentId)return;const rel=chars[currentId].relations.find(r=>r.id===rid);if(rel){rel[field]=val;}}
+
+function renderRelations(){
+  const c=chars[currentId];if(!c)return;
+  const wrap=document.getElementById('relEntries');if(!wrap)return;
+  wrap.innerHTML=c.relations.map(rel=>{
+    const linked=rel.charId&&chars[rel.charId];
+    const dispName=linked?charName(chars[rel.charId]):(rel.charName||'');
+    const typeOpts=RTYPES.map(t=>`<option value="${esc(t)}"${rel.type===t?' selected':''}>${t}</option>`).join('');
+    return `<div class="rel-entry" id="re_${rel.id}">
+      <select class="rtype" onchange="updateRel('${rel.id}','type',this.value)">${typeOpts}</select>
+      <div class="rchwrap">
+        <input class="rchinp" id="rci_${rel.id}" value="${esc(dispName)}" placeholder="Personnage ou nom libre…" autocomplete="off"
+          oninput="onRelInput('${rel.id}',this)" onfocus="showAc('${rel.id}',this)" onkeydown="acKey(event,'${rel.id}')">
+        ${linked?`<span class="linked-tag">lié</span>`:''}
+      </div>
+      <button class="drel" onclick="removeRelation('${rel.id}')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <input class="rnoteinp" placeholder="Note sur cette relation…" value="${esc(rel.note||'')}" oninput="updateRel('${rel.id}','note',this.value)">
+    </div>`;
+  }).join('');
+}
+
+// AUTOCOMPLETE
+let acId=null,acIdx=-1;
+function onRelInput(rid,inp){
+  const rel=chars[currentId].relations.find(r=>r.id===rid);
+  if(rel){if(rel.charId){const ln=chars[rel.charId];if(ln&&charName(ln)!==inp.value){rel.charId='';}}rel.charName=inp.value;}
+  showAc(rid,inp);
+}
+function showAc(rid,inp){
+  closeAc();acId=rid;acIdx=-1;
+  const q=inp.value.toLowerCase().trim();
+  const others=Object.values(chars).filter(c=>c.id!==currentId&&(!q||charName(c).toLowerCase().includes(q)||(c.role||'').toLowerCase().includes(q))).slice(0,8);
+  if(!others.length)return;
+  const drop=document.createElement('div');drop.className='acdrop';drop.id='ac_'+rid;
+  drop.innerHTML=others.map((c,i)=>{const av=c.image?`<div class="acav"><img src="${c.image}" alt=""></div>`:`<div class="acav">${initials(c)}</div>`;return`<div class="acitem" data-i="${i}" data-cid="${c.id}" onclick="pickAc('${rid}','${c.id}')">${av}<span class="acname">${esc(charName(c))}</span><span class="acrole">${esc(c.role||'')}</span></div>`;}).join('');
+  const wrap=inp.closest('.rchwrap');wrap.style.position='relative';wrap.appendChild(drop);
+  setTimeout(()=>document.addEventListener('click',closeAcOut),0);
+}
+function closeAcOut(e){const d=acId?document.getElementById('ac_'+acId):null;if(d&&!d.contains(e.target)&&!e.target.classList.contains('rchinp')){closeAc();document.removeEventListener('click',closeAcOut);}}
+function closeAc(){if(acId){const d=document.getElementById('ac_'+acId);if(d)d.remove();}acId=null;acIdx=-1;}
+function pickAc(rid,cid){
+  const rel=chars[currentId].relations.find(r=>r.id===rid);
+  if(rel){rel.charId=cid;rel.charName=charName(chars[cid]);}
+  const inp=document.getElementById('rci_'+rid);if(inp)inp.value=charName(chars[cid]);
+  closeAc();renderRelations();
+  if(document.getElementById('tp_reseau')?.classList.contains('active'))renderGraph();
+}
+function acKey(e,rid){
+  const drop=document.getElementById('ac_'+rid);if(!drop)return;
+  const items=drop.querySelectorAll('.acitem');
+  if(e.key==='ArrowDown'){e.preventDefault();acIdx=Math.min(acIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();acIdx=Math.max(acIdx-1,0);items.forEach((el,i)=>el.classList.toggle('sel',i===acIdx));}
+  else if(e.key==='Enter'&&acIdx>=0){e.preventDefault();const s=items[acIdx];if(s)pickAc(rid,s.dataset.cid);}
+  else if(e.key==='Escape')closeAc();
+}
+
+// ── GRAPH ──
+function renderGraph(){
+  const wrap=document.getElementById('graphWrap');if(!wrap)return;
+  const c=chars[currentId];if(!c)return;
+  const W=Math.max(wrap.clientWidth,500),H=420;
+
+  // collect linked nodes
+  const nodeMap={};
+  nodeMap[c.id]={id:c.id,label:charName(c),image:c.image,cx:W/2,cy:H/2,self:true};
+
+  // outgoing
+  const edges=[];
+  (c.relations||[]).forEach(r=>{
+    if(r.charId&&chars[r.charId]){
+      if(!nodeMap[r.charId]) nodeMap[r.charId]={id:r.charId,label:charName(chars[r.charId]),image:chars[r.charId].image,cx:0,cy:0,self:false};
+      edges.push({from:c.id,to:r.charId,type:r.type,note:r.note});
+    }
+  });
+  // incoming (reverse)
+  Object.values(chars).forEach(other=>{
+    if(other.id===c.id)return;
+    (other.relations||[]).forEach(r=>{
+      if(r.charId===c.id){
+        if(!nodeMap[other.id]) nodeMap[other.id]={id:other.id,label:charName(other),image:other.image,cx:0,cy:0,self:false};
+        if(!edges.find(e=>e.from===other.id&&e.to===c.id))
+          edges.push({from:other.id,to:c.id,type:r.type,note:r.note,reverse:true});
+      }
+    });
+  });
+
+  const peers=Object.values(nodeMap).filter(n=>!n.self);
+  if(!peers.length){
+    wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--ink3);font-size:var(--text-sm);text-align:center;padding:20px">Aucune relation liée à un personnage existant.<br>Utilisez l'onglet Relations pour créer des liens.</div>`;
+    return;
+  }
+
+  // position peers in ellipse
+  peers.forEach((n,i)=>{
+    const angle=(i/peers.length)*Math.PI*2-Math.PI/2;
+    const rx=Math.min(W*0.38,220),ry=Math.min(H*0.35,160);
+    n.cx=W/2+rx*Math.cos(angle);
+    n.cy=H/2+ry*Math.sin(angle);
+  });
+
+  // legend
+  const typesSeen=[...new Set(edges.map(e=>e.type))];
+  const legend=typesSeen.map(t=>`<div class="gli"><div class="gld" style="background:${rCol(t)}"></div>${esc(t)}</div>`).join('');
+
+  // build SVG
+  const clipPaths=Object.values(nodeMap).filter(n=>n.image).map(n=>`<clipPath id="cp_${n.id}"><circle cx="${n.cx}" cy="${n.cy}" r="23"/></clipPath>`).join('');
+
+  const edgeSvg=edges.map(e=>{
+    const f=nodeMap[e.from],t=nodeMap[e.to];if(!f||!t)return'';
+    const col=rCol(e.type);
+    const dx=t.cx-f.cx,dy=t.cy-f.cy,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<1)return'';
+    // offset endpoints to circle edge
+    const r1=f.self?27:23,r2=t.self?27:23;
+    const ux=dx/dist,uy=dy/dist;
+    const x1=f.cx+ux*r1,y1=f.cy+uy*r1,x2=t.cx-ux*r2,y2=t.cy-uy*r2;
+    const mx=(x1+x2)/2,my=(y1+y2)/2-12;
+    const noteText=e.note?` · ${e.note.slice(0,18)}`:'';
+    return `<g>
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.5" stroke-opacity=".55"/>
+      <circle cx="${mx}" cy="${my+12}" r="0"/>
+      <text x="${mx}" y="${my}" text-anchor="middle" style="font-size:9px;fill:${col};font-family:var(--sans)">${esc(e.type+noteText)}</text>
+    </g>`;
+  }).join('');
+
+  const nodeSvg=Object.values(nodeMap).map(n=>{
+    const r=n.self?27:23;
+    const fill=n.self?'var(--ink)':'var(--sf)';
+    const stroke=n.self?'none':'var(--ln2)';
+    const click=n.self?'':`style="cursor:pointer" onclick="selectChar('${n.id}')"`;
+    const initStr=initials(chars[n.id]||{prenom:n.label.split(' ')[0],nom:n.label.split(' ')[1]||''});
+    const inner=n.image
+      ?`<image href="${n.image}" x="${n.cx-r}" y="${n.cy-r}" width="${r*2}" height="${r*2}" clip-path="url(#cp_${n.id})" style="cursor:${n.self?'default':'pointer'}" ${n.self?'':''}/>`
+      :`<text x="${n.cx}" y="${n.cy+4}" text-anchor="middle" style="font-size:${n.self?13:11}px;fill:${n.self?'var(--sf)':'var(--ink2)'};font-family:var(--sans);font-weight:500;pointer-events:none">${esc(initStr)}</text>`;
+    const words=n.label.split(' ');
+    const nameLine1=words[0],nameLine2=words.slice(1).join(' ');
+    const nameTag=n.self?'':`<text x="${n.cx}" y="${n.cy+r+13}" text-anchor="middle" style="font-size:var(--text-xs);fill:var(--ink2);font-family:var(--sans);pointer-events:none">${esc(nameLine1)}</text>${nameLine2?`<text x="${n.cx}" y="${n.cy+r+24}" text-anchor="middle" style="font-size:var(--text-xs);fill:var(--ink2);font-family:var(--sans);pointer-events:none">${esc(nameLine2)}</text>`:''}`;
+    return `<g ${click}><circle cx="${n.cx}" cy="${n.cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>${inner}${nameTag}</g>`;
+  }).join('');
+
+  wrap.innerHTML=`
+    <div class="gtb">
+      <span class="glb">Réseau de <strong>${esc(charName(c))}</strong> · ${peers.length} connexion${peers.length>1?'s':''}</span>
+      <span style="margin-left:auto;font-size:var(--text-xs);color:var(--ink3)">Cliquez sur un nœud pour ouvrir · molette pour zoomer</span>
+    </div>
+    <svg id="gsvg" viewBox="0 0 ${W} ${H}" style="min-height:${H}px">
+      <defs>${clipPaths}</defs>
+      ${edgeSvg}${nodeSvg}
+    </svg>
+    <div class="glegend">${legend}</div>`;
+
+  initGraphInteraction(W,H);
+}
+
+function initGraphInteraction(W,H){
+  const svg=document.getElementById('gsvg');if(!svg)return;
+  let drag=false,ox=0,oy=0,vb=[0,0,W,H];
+  svg.addEventListener('mousedown',e=>{if(e.target.closest('[onclick]'))return;drag=true;ox=e.clientX;oy=e.clientY;});
+  window.addEventListener('mousemove',e=>{if(!drag)return;const dx=(e.clientX-ox)*(vb[2]/svg.clientWidth),dy=(e.clientY-oy)*(vb[3]/svg.clientHeight);svg.setAttribute('viewBox',[vb[0]-dx,vb[1]-dy,vb[2],vb[3]].join(' '));});
+  window.addEventListener('mouseup',()=>{if(drag){const v=svg.getAttribute('viewBox').split(' ').map(Number);vb=v;}drag=false;});
+  svg.addEventListener('wheel',e=>{e.preventDefault();const s=e.deltaY>0?1.1:.91;const cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2;vb[2]*=s;vb[3]*=s;vb[0]=cx-vb[2]/2;vb[1]=cy-vb[3]/2;svg.setAttribute('viewBox',vb.join(' '));},{passive:false});
+}
+
+// ── VOICE ──
+function initVoice(){
+  const pad=document.getElementById('vpad');if(!pad)return;
+  function sp(e){const rect=pad.getBoundingClientRect();const x=Math.max(5,Math.min(95,((e.clientX-rect.left)/rect.width)*100));const y=Math.max(5,Math.min(95,((e.clientY-rect.top)/rect.height)*100));document.getElementById('vdot').style.left=x+'%';document.getElementById('vdot').style.top=y+'%';document.getElementById('vx').value=x;document.getElementById('vy').value=y;}
+  let d=false;pad.addEventListener('mousedown',e=>{d=true;sp(e);});window.addEventListener('mousemove',e=>{if(d)sp(e);});window.addEventListener('mouseup',()=>d=false);
+}
+
+// ── TABS ──
+function switchTab(name){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('active',p.id==='tp_'+name));
+  if(name==='reseau')renderGraph();
+}
+
+// ── MODAL / TOAST ──
+function modal(title,msg,onOk){const m=document.createElement('div');m.className='modal-bg';m.innerHTML=`<div class="modal"><h3>${title}</h3><p>${msg}</p><div class="modal-acts"><button class="btn bto btsm" onclick="this.closest('.modal-bg').remove()">Annuler</button><button class="btn btd btsm" id="mOk">Confirmer</button></div></div>`;document.body.appendChild(m);m.querySelector('#mOk').onclick=()=>{m.remove();onOk();};}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000);}
+
+// ── FORM HELPERS ──
+function fi(lbl,f,v,type='text',ph=''){
+  if(type==='textarea') return `<div class="fi"><label>${lbl}</label><textarea data-f="${f}" placeholder="${ph}">${esc(v)}</textarea></div>`;
+  return `<div class="fi"><label>${lbl}</label><input type="${type}" data-f="${f}" value="${esc(v)}" placeholder="${ph}"></div>`;
+}
+function fiSel(lbl,f,v,opts){return `<div class="fi"><label>${lbl}</label><select data-f="${f}">${opts.map(o=>`<option value="${o}"${v===o?' selected':''}>${o}</option>`).join('')}</select></div>`;}
+function fiTog(lbl,f,checked){return `<div class="yn"><label>${lbl}</label><label class="tog"><input type="checkbox" data-f="${f}"${checked?' checked':''}><div class="tgt"></div><div class="tgk"></div></label></div>`;}
+
+// ── RENDER FORM ──
+function renderForm(){
+  const c=chars[currentId];if(!c)return;
+  const ih=c.image?'':'display:none',ph=c.image?'display:none':'';
+  document.getElementById('mainArea').innerHTML=`
+  <div class="ftb">
+    <div class="ftbl">
+      <input class="ctinp" value="${esc(charName(c))}" placeholder="Prénom Nom" id="titInp" oninput="syncName(this.value)">
+      <span class="rbadge" id="rbadge">${esc(c.role||'Rôle non défini')}</span>
+    </div>
+    <div class="ftbr">
+      <button class="btn btg btsm" onclick="exportChar('${c.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exporter</button>
+      <button class="btn btdng btsm" onclick="deleteChar('${c.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+      <button class="btn btd btsm" onclick="saveChar()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Sauvegarder</button>
+    </div>
+  </div>
+  <nav class="tnav">
+    <button class="tbtn active" data-tab="identite" onclick="switchTab('identite')">Identité</button>
+    <button class="tbtn" data-tab="physique" onclick="switchTab('physique')">Physique</button>
+    <button class="tbtn" data-tab="personnalite" onclick="switchTab('personnalite')">Personnalité</button>
+    <button class="tbtn" data-tab="voix" onclick="switchTab('voix')">Voix</button>
+    <button class="tbtn" data-tab="aptitudes" onclick="switchTab('aptitudes')">Aptitudes</button>
+    <button class="tbtn" data-tab="social" onclick="switchTab('social')">Social</button>
+    <button class="tbtn" data-tab="quotidien" onclick="switchTab('quotidien')">Quotidien</button>
+    <button class="tbtn" data-tab="relations" onclick="switchTab('relations')">Relations</button>
+    <button class="tbtn" data-tab="reseau" onclick="switchTab('reseau')">Réseau ↗</button>
+    <button class="tbtn" data-tab="histoire" onclick="switchTab('histoire')">Histoire</button>
+    <button class="tbtn" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+  </nav>
+  <div class="fcont">
+
+    <div class="tp active" id="tp_identite">
+      <div class="avsec">
+        <div class="avup" id="avWrap"><img id="avImg" src="${c.image||''}" alt="" style="${ih}"><svg id="avPh" viewBox="0 0 24 24" style="${ph}"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input type="file" accept="image/*" onchange="handleImage(event)"></div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px"><span style="font-size:var(--text-xs);color:var(--ink3)">Photo / illustration</span><button class="btn bto btsm" style="width:fit-content" onclick="removeImage()">Supprimer</button></div>
+        <div class="avmeta">${fi('Prénom','prenom',c.prenom)}${fi('Nom','nom',c.nom)}${fi('Surnom','surnom',c.surnom,'text','Alias…')}</div>
+      </div>
+      <div class="fg"><div class="fgl">Informations générales</div>
+        <div class="g4">
+          ${fi('Âge','age',c.age,'number')}
+          ${fiSel('Genre','genre',c.genre,['—','Masculin','Féminin','Non-binaire','Autre'])}
+          ${fi('Nationalité','nationalite',c.nationalite)}
+          ${fiSel('Type de rôle','typeRole',c.typeRole,['—','Protagoniste','Antagoniste','Secondaire','Figurant','Narrateur'])}
+          ${fi('Lieu de naissance','lieuNaissance',c.lieuNaissance)}
+          ${fi('Lieu de vie','lieuVie',c.lieuVie)}
+          <div class="fi" style="grid-column:span 2"><label>Rôle dans l'histoire</label><input type="text" data-f="role" value="${esc(c.role||'')}" placeholder="ex: Médiateur…" oninput="liveSync('role',this.value);document.getElementById('rbadge').textContent=this.value||'Rôle non défini'"></div>
+        </div>
+      </div>
+      <div class="fg"><div class="fgl">Résumé</div>${fi('','notes',c.notes,'textarea','En quelques mots, qui est ce personnage ?')}</div>
+    </div>
+
+    <div class="tp" id="tp_physique">
+      <div class="fg"><div class="fgl">Morphologie</div><div class="g4">${fi('Taille','taille',c.taille,'text','1m75…')}${fi('Corpulence','corpulence',c.corpulence,'text','Athlétique…')}${fi('Couleur de peau','teint',c.teint)}${fi('Posture','posture',c.posture,'text','Droite…')}${fi('État de la peau','peau',c.peau,'text','Ridée…')}</div></div>
+      <div class="fg"><div class="fgl">Visage & chevelure</div><div class="g4">${fi('Forme du visage','formesVisage',c.formesVisage,'text','Ovale…')}${fi('Coupe de cheveux','coupeCh',c.coupeCh)}${fi('Couleur des cheveux','couleurCh',c.couleurCh)}${fi('Forme des yeux','formesYeux',c.formesYeux,'text','Bridés…')}${fi('Couleur des yeux','couleurYeux',c.couleurYeux)}${fi('Forme du nez','nez',c.nez)}${fi('Dentition','dentition',c.dentition,'text','Bonne…')}${fi('Pilosité','pilosite',c.pilosite,'text','Barbe…')}</div></div>
+      <div class="fg"><div class="fgl">Signes particuliers & style</div><div class="g2">${fi('Cicatrices','cicatrices',c.cicatrices,'text','Où, origine…')}${fi('Tatouages','tatouages',c.tatouages,'text','Motif, où…')}${fi('Piercings','piercings',c.piercings,'text','Où…')}${fi('Signe distinctif','distinctif',c.distinctif,'text','Ce qu\'on remarque…')}${fi('Style vestimentaire','style',c.style,'text','Militaire…')}${fi('Accessoires','accessoires',c.accessoires,'text','Montre, arme…')}</div></div>
+    </div>
+
+    <div class="tp" id="tp_personnalite">
+      <div class="fg"><div class="fgl">Spectre des traits</div>
+        <div class="trgrid">${TRAITS.map(([a,b],i)=>`<div class="trrow"><span class="trl">${a}</span><input type="range" id="tr${i}" min="0" max="100" value="${c.traits[i]||50}"><span class="trr">${b}</span></div>`).join('')}</div>
+      </div>
+      <div class="fg" style="margin-top:16px"><div class="fgl">Notes de personnalité</div>${fi('','notePerso',c.notePerso,'textarea','Nuances, contradictions, évolution…')}</div>
+    </div>
+
+    <div class="tp" id="tp_voix">
+      <div class="fg"><div class="fgl">Timbre & débit</div>
+        <div class="vlayout">
+          <div class="vpad" id="vpad"><div class="vaxh"></div><div class="vaxv"></div><span class="vlb t">Aiguë</span><span class="vlb b">Grave</span><span class="vlb l">Lent</span><span class="vlb r">Rapide</span><div class="vdot" id="vdot" style="left:${c.voiceX}%;top:${c.voiceY}%"></div><input type="hidden" id="vx" value="${c.voiceX}"><input type="hidden" id="vy" value="${c.voiceY}"></div>
+          <div class="vflds">${fiSel('Expression','expression',c.expression,['Mutique','Laconique','Neutre','Loquace','Bavard'])}${fiSel('Registre','langage',c.langage,['Soutenu','Raffiné','Neutre','Familier','Populaire'])}${fiTog('Argot / verlan','argot',c.argot)}${fiTog('Accent marqué','accent',c.accent)}${fi('Langue secondaire','langueSecondaire',c.langueSecondaire,'text','Nom, niveau…')}</div>
+        </div>
+      </div>
+      <div class="fg"><div class="fgl">Particularités</div><div class="g2">${fi('Tics de langage','ticsLangage',c.ticsLangage,'textarea','Expressions récurrentes…')}${fi('Langage corporel','langageCorporel',c.langageCorporel,'textarea','Gestuelle…')}${fi('Rire','rire',c.rire,'text','Tonalité, fréquence…')}</div></div>
+    </div>
+
+    <div class="tp" id="tp_aptitudes">
+      <div class="fg"><div class="fgl">Statistiques</div>
+        <div class="sgrid">${STATS.map(([name,k])=>`<div class="sb"><div class="sh"><span class="sn">${name}</span><span class="sv" id="sv_${k}">${c.stats[k]||50}</span></div><div class="sbar"><div class="sfill" id="sf_${k}" style="width:${c.stats[k]||50}%"></div></div><input type="range" id="st_${k}" min="0" max="100" value="${c.stats[k]||50}" style="margin-top:4px" oninput="document.getElementById('sv_${k}').textContent=this.value;document.getElementById('sf_${k}').style.width=this.value+'%'"></div>`).join('')}</div>
+      </div>
+      <div class="fg" style="margin-top:20px"><div class="fgl">Aptitudes & faiblesses</div>
+        <table class="apt"><thead><tr><th>Catégorie</th><th>Aptitudes</th><th>Faiblesses</th></tr></thead>
+        <tbody>${APTS.map(a=>`<tr><td>${a}</td><td><input id="apt_${a}" placeholder="Points forts…"></td><td><input id="fai_${a}" placeholder="Points faibles…"></td></tr>`).join('')}</tbody></table>
+      </div>
+      <div class="fg" style="margin-top:20px"><div class="fgl">Valeurs & éthique</div>
+        <div class="g2">${fi('Valeurs fondamentales','valeurs',c.valeurs,'textarea','Ce qui guide ses choix…')}${fi('Ce qui l\'horrifie','horreur',c.horreur,'textarea','Lignes rouges…')}${fi('Rapport au mensonge','mensonge',c.mensonge,'textarea','')}${fi('Sens de la justice','justice',c.justice,'textarea','')}</div>
+        ${fiTog('Peut transgresser ses valeurs','capTransgresser',c.capTransgresser)}
+        <div style="margin-top:9px">${fi('Si oui, pourquoi','transgression',c.transgression,'textarea','')}</div>
+      </div>
+    </div>
+
+    <div class="tp" id="tp_social">
+      <div class="fg"><div class="fgl">Image de soi</div>
+        <div class="g2">${fi('Comment se voit-il ?','commentSeVoit',c.commentSeVoit,'textarea','')}${fi('Comment veut-il être perçu ?','commentVeutEtre',c.commentVeutEtre,'textarea','')}${fi('Qualités appréciées chez les autres','qualAimees',c.qualAimees,'text','')}${fi('Défauts rédhibitoires','defauts',c.defauts,'text','')}</div>
+        <div class="g2" style="margin-top:9px">${fiTog('Populaire','popularite',c.popularite)}${fiTog('Casanier','casanier',c.casanier)}</div>
+      </div>
+      <div class="fg"><div class="fgl">Goûts & occupation</div>
+        <div class="g2">${fi('Ce qu\'il aime','aime',c.aime,'textarea','Activités, lieux, idées…')}${fi('Ce qu\'il déteste','deteste',c.deteste,'textarea','')}${fi('Lieux de prédilection','lieuPrefere',c.lieuPrefere,'text','')}${fi('Objet préféré','objetPrefere',c.objetPrefere,'text','')}${fi('Emploi / Fonction','emploi',c.emploi,'text','')}${fiTog('Satisfait de son emploi','satisfaitEmploi',c.satisfaitEmploi)}</div>
+      </div>
+      <div class="fg"><div class="fgl">Modèles</div>${fi('Figures admirées','modeles',c.modeles,'textarea','')}</div>
+    </div>
+
+    <div class="tp" id="tp_quotidien">
+      <div class="fg"><div class="fgl">Rythme de vie</div>
+        <div class="g2">${fi('Premier réflexe au réveil','reveil',c.reveil,'textarea','')}${fi('Dernière chose avant le coucher','coucher',c.coucher,'textarea','')}${fi('Journée type','journee',c.journee,'textarea','')}</div>
+      </div>
+      <div class="fg"><div class="fgl">Habitudes</div>
+        <div class="g2">${fi('Tics comportementaux','ticsComport',c.ticsComport,'textarea','Gestes répétitifs…')}${fi('Mauvaises habitudes','mauvaisHabitudes',c.mauvaisHabitudes,'textarea','')}${fi('Élément préféré du quotidien','elementPrefere',c.elementPrefere,'text','')}${fi('Ce qu\'il changerait','changerVie',c.changerVie,'textarea','')}</div>
+        ${fiTog('Satisfait de sa vie','satisfaitVie',c.satisfaitVie)}
+      </div>
+    </div>
+
+    <div class="tp" id="tp_relations">
+      <div class="cnote">Tapez pour rechercher un personnage existant dans la liste. Une flèche indique un lien actif. La note décrit la qualité de la relation. Tout lien apparaît dans l'onglet <strong>Réseau ↗</strong>.</div>
+      <div class="rel-entries" id="relEntries"></div>
+      <button class="addrel" onclick="addRelation()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter une relation</button>
+    </div>
+
+    <div class="tp" id="tp_reseau">
+      <div class="cnote">Graphe des relations liées. <strong>Cliquez</strong> sur un nœud pour ouvrir la fiche · molette pour zoomer · glisser pour déplacer. Les liens entrants (autres personnages vers celui-ci) sont aussi affichés.</div>
+      <div class="gWrap" id="graphWrap" style="min-height:200px"></div>
+    </div>
+
+    <div class="tp" id="tp_histoire">
+      <div class="fg"><div class="fgl">Biographie</div>${fi('Passé du personnage','passe',c.passe,'textarea','Origines, événements marquants…')}</div>
+      <div class="fg"><div class="fgl">Présence dans l'intrigue</div>
+        <p style="font-size:var(--text-xs);color:var(--ink3);margin-bottom:10px">Chapitres où apparaît le personnage</p>
+        <div class="chtk">${[...Array(20)].map((_,i)=>{const n=i+1;return`<button class="chb${c.chaps[n]?' active':''}" id="ch${n}" onclick="this.classList.toggle('active')">${n}</button>`;}).join('')}</div>
+        <div style="margin-top:16px">${fi('Évolution dans l\'intrigue','evolution',c.evolution,'textarea','Arc narratif, transformations…')}</div>
+      </div>
+    </div>
+
+    <div class="tp" id="tp_notes">
+      <div class="fg"><div class="fgl">Notes libres</div>${fi('','notes',c.notes,'textarea','Idées de scènes, questions ouvertes…')}</div>
+    </div>
+
+  </div>`;
+
+  // wire apt inputs
+  APTS.forEach(a=>{
+    const fk='apt'+a.slice(0,4),wk='fai'+a.slice(0,4);
+    const fi2=document.getElementById('apt_'+a),wi=document.getElementById('fai_'+a);
+    if(fi2){fi2.value=c[fk]||'';fi2.oninput=e=>c[fk]=e.target.value;}
+    if(wi){wi.value=c[wk]||'';wi.oninput=e=>c[wk]=e.target.value;}
+  });
+  initVoice();
+  renderRelations();
+}
+
+function syncName(val){if(!currentId)return;const p=val.trim().split(' ');chars[currentId].prenom=p[0]||'';chars[currentId].nom=p.slice(1).join(' ')||'';renderList();}
+
+// ── INIT ──
+load();migrate();renderList();
+</script>
+</body>
+</html>

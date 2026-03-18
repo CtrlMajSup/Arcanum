@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcanum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+:root{--bg:#f7f6f3;--sf:#fff;--sf2:#f2f1ee;--sf3:#eae9e5;--ink:#1a1917;--ink2:#6b6861;--ink3:#b0afa9;--ln:#e4e3df;--ln2:#d0cfc9;--r:10px;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--ln2);border-radius:99px}
+header{padding:clamp(14px,3vw,28px) clamp(14px,4vw,48px) 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:clamp(15px,2.5vw,20px);font-weight:300;letter-spacing:.12em;text-transform:uppercase}
+.brand em{font-style:normal;font-weight:500}
+.hdr-r{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.stats-bar{display:flex;gap:clamp(12px,3vw,28px);padding:clamp(12px,2.5vw,20px) clamp(14px,4vw,48px) 0;flex-wrap:wrap}
+.stat-n{font-size:clamp(15px,2.5vw,20px);font-weight:500;font-family:var(--mono);display:block}
+.stat-l{font-size:var(--text-xs);color:var(--ink3);letter-spacing:.04em}
+.divider{height:1px;background:var(--ln);margin:clamp(12px,2.5vw,22px) clamp(14px,4vw,48px) 0}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:10px;padding:clamp(12px,2.5vw,22px) clamp(14px,4vw,48px) clamp(20px,4vw,48px)}
+.module-card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;overflow:hidden;cursor:pointer;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.module-card:hover{border-color:var(--ln2);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.module-card:active{transform:scale(.99)}
+.mc-accent{height:3px}
+.mc-body{padding:14px 16px 12px;flex:1;display:flex;flex-direction:column;gap:6px}
+.mc-icon{width:30px;height:30px;border-radius:7px;border:1px solid var(--ln);background:var(--sf2);display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.mc-icon svg{width:15px;height:15px;stroke:var(--ink2);fill:none;stroke-width:1.5}
+.mc-title{font-size:var(--text-base);font-weight:500}
+.mc-desc{font-size:var(--text-xs);color:var(--ink3);line-height:1.6;flex:1}
+.mc-foot{padding:9px 16px;border-top:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between}
+.mc-count{font-size:var(--text-xs);color:var(--ink3);font-family:var(--mono)}
+.mc-arrow svg{width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:2}
+/* Search card spans full width */
+.card-search{grid-column:1/-1;flex-direction:row;align-items:center;border-radius:10px}
+.card-search .mc-body{padding:12px 16px;flex-direction:row;align-items:center;gap:12px}
+.card-search .mc-desc{font-size:var(--text-sm);margin:0}
+.kbd{font-size:var(--text-xs);color:var(--ink3);background:var(--sf2);border:1px solid var(--ln);border-radius:4px;padding:1px 6px;font-family:var(--mono);white-space:nowrap;margin-left:auto;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;font-family:var(--sans);font-size:var(--text-sm);font-weight:500;cursor:pointer;border:1px solid;transition:all .12s}
+.btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.bto{background:transparent;border-color:var(--ln2);color:var(--ink2)}.bto:hover{border-color:var(--ink);color:var(--ink)}
+.btsm{padding:5px 9px;font-size:var(--text-xs)}
+.fwrap{position:relative;display:inline-flex}.fwrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:var(--bg);font-size:var(--text-sm);padding:9px 14px;border-radius:8px;z-index:999;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.notes-section{padding:0 clamp(14px,4vw,48px) clamp(20px,4vw,48px)}
+.notes-title{font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:7px}
+.note-card{background:var(--sf);border:1px solid var(--ln);border-radius:9px;padding:11px 13px;font-size:var(--text-xs);color:var(--ink2);line-height:1.7}
+.note-card strong{color:var(--ink);font-weight:500;display:block;margin-bottom:3px}
+kbd{font-family:var(--mono);font-size:var(--text-xs);background:var(--sf3);padding:1px 4px;border-radius:3px;border:1px solid var(--ln)}
+@media(max-width:480px){
+  .hdr-r .btn span{display:none}
+  .card-search{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><em>Arc</em>anum</div>
+  <div class="hdr-r">
+    <div class="fwrap">
+      <button class="btn bto btsm"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Importer</span></button>
+      <input type="file" accept=".json" onchange="importAll(event)">
+    </div>
+    <button class="btn bto btsm" onclick="exportAll()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Exporter tout</span></button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div><span class="stat-n" id="s-chars">0</span><span class="stat-l">personnages</span></div>
+  <div><span class="stat-n" id="s-lieux">0</span><span class="stat-l">lieux</span></div>
+  <div><span class="stat-n" id="s-scenes">0</span><span class="stat-l">scènes</span></div>
+  <div><span class="stat-n" id="s-chaps">0</span><span class="stat-l">chapitres</span></div>
+</div>
+<div class="divider"></div>
+
+<div class="modules-grid">
+
+  <a href="search.html" class="module-card card-search">
+    <div class="mc-body">
+      <div class="mc-icon" style="flex-shrink:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div>
+        <div class="mc-title">Recherche globale</div>
+        <div class="mc-desc">Cherchez dans tous les personnages, lieux, scènes et chapitres.</div>
+      </div>
+      <span class="kbd">/</span>
+    </div>
+  </a>
+
+  <a href="personnages.html" class="module-card">
+    <div class="mc-accent" style="background:#5B8DB8"></div>
+    <div class="mc-body">
+      <div class="mc-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="mc-title">Personnages</div>
+      <div class="mc-desc">Fiches, traits, statistiques, relations et réseau graphique.</div>
+    </div>
+    <div class="mc-foot"><span class="mc-count" id="cnt-chars">—</span><span class="mc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+  </a>
+
+  <a href="lieux.html" class="module-card">
+    <div class="mc-accent" style="background:#7BAF7B"></div>
+    <div class="mc-body">
+      <div class="mc-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <div class="mc-title">Lieux</div>
+      <div class="mc-desc">Planètes, villes et vaisseaux avec hiérarchie et positions.</div>
+    </div>
+    <div class="mc-foot"><span class="mc-count" id="cnt-lieux">—</span><span class="mc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+  </a>
+
+  <a href="scenes.html" class="module-card">
+    <div class="mc-accent" style="background:#9B7BB5"></div>
+    <div class="mc-body">
+      <div class="mc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="mc-title">Scènes</div>
+      <div class="mc-desc">Qui est où, quand. Pivot entre personnages, lieux et chapitres.</div>
+    </div>
+    <div class="mc-foot"><span class="mc-count" id="cnt-scenes">—</span><span class="mc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+  </a>
+
+  <a href="timeline.html" class="module-card">
+    <div class="mc-accent" style="background:#C4A35A"></div>
+    <div class="mc-body">
+      <div class="mc-icon"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="8 8 3 12 8 16"/><polyline points="16 8 21 12 16 16"/></svg></div>
+      <div class="mc-title">Timeline & Carte</div>
+      <div class="mc-desc">Tableau croisé personnages × chapitres et carte des déplacements.</div>
+    </div>
+    <div class="mc-foot"><span class="mc-count" id="cnt-chaps">—</span><span class="mc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+  </a>
+
+</div>
+
+<div class="divider"></div>
+<div class="notes-section" style="padding-top:18px">
+  <div class="notes-title">Démarrage rapide</div>
+  <div class="notes-grid">
+    <div class="note-card"><strong>1 — Personnages</strong>Créez vos fiches avec traits, statistiques et relations.</div>
+    <div class="note-card"><strong>2 — Lieux</strong>Ajoutez planètes, villes et vaisseaux.</div>
+    <div class="note-card"><strong>3 — Scènes</strong>Liez qui est là, où, à quel chapitre.</div>
+    <div class="note-card"><strong>4 — Timeline</strong>La vue se génère automatiquement.</div>
+    <div class="note-card"><strong>Recherche</strong>Touche <kbd>/</kbd> depuis n'importe quelle page.</div>
+    <div class="note-card"><strong>Données</strong>Exportez régulièrement via le bouton en haut.</div>
+  </div>
+</div>
+
+<script src="arcanum.js"></script>
+<script>
+function updateStats(){
+  const c=Object.keys(ARCANUM.Chars.all()).length,l=Object.keys(ARCANUM.Lieux.all()).length,s=Object.keys(ARCANUM.Scenes.all()).length,ch=Object.keys(ARCANUM.Chapitres.all()).length;
+  document.getElementById('s-chars').textContent=c;document.getElementById('s-lieux').textContent=l;document.getElementById('s-scenes').textContent=s;document.getElementById('s-chaps').textContent=ch;
+  document.getElementById('cnt-chars').textContent=c+' personnage'+(c!==1?'s':'');
+  document.getElementById('cnt-lieux').textContent=l+' lieu'+(l!==1?'x':'');
+  document.getElementById('cnt-scenes').textContent=s+' scène'+(s!==1?'s':'');
+  document.getElementById('cnt-chaps').textContent=ch+' chapitre'+(ch!==1?'s':'');
+}
+function exportAll(){ARCANUM.IO.downloadJSON(ARCANUM.IO.exportAll(),'arcanum_sauvegarde.json');}
+function importAll(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{try{ARCANUM.IO.importAll(JSON.parse(e.target.result));updateStats();toast('Importé !');}catch{alert('Fichier invalide.');}evt.target.value='';};r.readAsText(file);
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();window.location.href='search.html';}});
+updateStats();
+</script>
+</body>
+</html>

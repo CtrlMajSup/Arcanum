@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcanum — Timeline & Carte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+:root{--bg:#f7f6f3;--sf:#fff;--sf2:#f2f1ee;--sf3:#eae9e5;--ink:#1a1917;--ink2:#6b6861;--ink3:#b0afa9;--ln:#e4e3df;--ln2:#d0cfc9;--r:8px;--rl:12px;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:var(--text-base);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--ln2);border-radius:99px}
+
+/* TOP */
+.topbar{height:var(--topbar-h);flex-shrink:0;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid var(--ln);background:var(--sf);gap:10px;flex-shrink:0}
+.back{display:flex;align-items:center;gap:5px;font-size:var(--text-sm);color:var(--ink3);text-decoration:none;border:1px solid var(--ln);border-radius:var(--r);padding:5px 10px;transition:all .12s}
+.back:hover{color:var(--ink);border-color:var(--ink2)}.back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.tb-title{font-size:var(--text-base);font-weight:500;color:var(--ink)}
+.tb-r{margin-left:auto;display:flex;gap:7px;align-items:center}
+
+/* VIEW TOGGLE */
+.view-tog{display:flex;border:1px solid var(--ln);border-radius:var(--r);overflow:hidden}
+.vt-btn{padding:6px 14px;font-size:var(--text-sm);font-family:var(--sans);border:none;background:transparent;color:var(--ink2);cursor:pointer;transition:all .12s;border-right:1px solid var(--ln)}
+.vt-btn:last-child{border-right:none}
+.vt-btn:hover{background:var(--sf2)}.vt-btn.active{background:var(--ink);color:var(--bg)}
+
+/* CONTROLS BAR */
+.controls{height:44px;flex-shrink:0;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid var(--ln);background:var(--sf);gap:10px;overflow-x:auto}
+.controls::-webkit-scrollbar{height:0}
+.ctl-label{font-size:var(--text-xs);color:var(--ink3);white-space:nowrap}
+.ctl-sep{width:1px;height:20px;background:var(--ln);flex-shrink:0}
+.chip{padding:3px 9px;border-radius:99px;border:1px solid var(--ln);font-size:var(--text-xs);cursor:pointer;background:transparent;color:var(--ink2);font-family:var(--sans);transition:all .12s;white-space:nowrap;flex-shrink:0}
+.chip:hover{border-color:var(--ink2)}.chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ctl-sel{font-size:var(--text-xs);padding:4px 7px;border:1px solid var(--ln);border-radius:6px;background:transparent;color:var(--ink2);font-family:var(--sans);outline:none;cursor:pointer}
+
+/* MAIN AREA */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── TIMELINE VIEW ────────────────────────────────── */
+.tl-wrap{flex:1;overflow:auto;position:relative}
+.tl-table{border-collapse:separate;border-spacing:0;min-width:max-content}
+.tl-table th,.tl-table td{padding:0}
+
+/* Frozen first column */
+.col-perso{position:sticky;left:0;z-index:10;background:var(--sf);border-right:1px solid var(--ln)}
+.th-perso{position:sticky;left:0;top:0;z-index:20;background:var(--sf);border-right:1px solid var(--ln);border-bottom:1px solid var(--ln)}
+.th-chap{position:sticky;top:0;z-index:9;background:var(--sf);border-bottom:1px solid var(--ln);text-align:center}
+
+/* Header row */
+.th-perso-inner{display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:48px;gap:8px}
+.th-perso-txt{font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.chap-header{padding:6px 12px;min-width:110px;max-width:150px}
+.chap-num{font-family:var(--mono);font-size:var(--text-xs);color:var(--ink);font-weight:500}
+.chap-title-hdr{font-size:var(--text-xs);color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.chap-date-hdr{font-size:9px;color:var(--ink3);font-style:italic}
+
+/* Perso row */
+.perso-cell{display:flex;align-items:center;gap:8px;padding:6px 12px;height:52px;min-width:160px;max-width:200px}
+.perso-av{width:28px;height:28px;border-radius:50%;border:1px solid var(--ln);background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);color:var(--ink3);overflow:hidden;flex-shrink:0}
+.perso-av img{width:100%;height:100%;object-fit:cover}
+.perso-name{font-size:var(--text-sm);font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perso-role{font-size:var(--text-xs);color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Data cell */
+.data-cell{min-width:110px;max-width:150px;height:52px;padding:4px 6px;border-left:1px solid var(--ln);border-bottom:1px solid var(--ln);vertical-align:middle;cursor:default;transition:opacity .15s;position:relative}
+.data-cell:hover .cell-tooltip{display:block}
+.cell-block{width:100%;height:100%;border-radius:5px;display:flex;align-items:center;justify-content:center;padding:3px 6px;position:relative}
+.cell-lieu-name{font-size:var(--text-xs);font-weight:500;text-align:center;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cell-empty{opacity:.15}
+.cell-tooltip{display:none;position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:var(--text-xs);padding:4px 8px;border-radius:5px;white-space:nowrap;z-index:100;pointer-events:none}
+.cell-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--ink)}
+
+/* Transition arrow between consecutive different locations */
+.cell-transition{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;background:var(--sf);border:1px solid var(--ln2);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:5;font-size:8px;color:var(--ink3)}
+
+/* Row separators by acte */
+.row-acte-sep td{border-top:2px solid var(--ln2)}
+.acte-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:2px 12px;background:var(--sf2);font-family:var(--mono)}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--ink3)}
+.empty-state h3{font-size:var(--text-md);font-weight:400;color:var(--ink2)}
+.empty-state p{font-size:var(--text-sm);line-height:1.9;text-align:center}
+.empty-state a{color:var(--ink);font-size:var(--text-sm);text-decoration:underline;text-underline-offset:3px}
+
+/* Legend */
+.legend{display:flex;align-items:center;gap:12px;padding:8px 18px;border-top:1px solid var(--ln);background:var(--sf);overflow-x:auto;flex-shrink:0}
+.legend::-webkit-scrollbar{height:0}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:var(--text-xs);color:var(--ink2);white-space:nowrap;cursor:pointer;transition:opacity .12s}
+.leg-item.dimmed{opacity:.35}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.leg-title{font-size:var(--text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-right:4px;white-space:nowrap}
+
+/* ── MAP VIEW ─────────────────────────────────────── */
+.map-wrap{flex:1;overflow:hidden;position:relative;background:var(--bg)}
+.map-canvas{width:100%;height:100%;position:relative;overflow:hidden;cursor:grab;user-select:none}
+.map-canvas:active{cursor:grabbing}
+.map-inner{position:absolute;transform-origin:0 0}
+
+/* Planet node */
+.planet-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:transform .15s}
+.planet-node:hover{transform:translate(-50%,-50%) scale(1.05)}
+.planet-circle{border-radius:50%;border:2px solid rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:500;color:#fff;position:relative;overflow:hidden;flex-shrink:0}
+.planet-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.planet-label{font-size:var(--text-xs);font-weight:500;color:var(--ink);text-align:center;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.planet-sub{font-size:9px;color:var(--ink3);text-align:center}
+
+/* City node (smaller, inside planet orbit) */
+.city-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:transform .12s}
+.city-node:hover{transform:translate(-50%,-50%) scale(1.08)}
+.city-circle{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:500}
+.city-label{font-size:var(--text-xs);color:var(--ink2);text-align:center;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Ship node */
+.ship-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:transform .12s}
+.ship-node:hover{transform:translate(-50%,-50%) scale(1.08)}
+.ship-icon{width:28px;height:28px;border-radius:6px;border:1.5px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;position:relative}
+.ship-icon svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.5}
+.ship-label{font-size:var(--text-xs);color:var(--ink2);text-align:center;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Trajectory path */
+.traj-path{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+/* Perso bubble on map */
+.perso-bubble{position:absolute;transform:translate(-50%,-50%);z-index:20}
+.pb-stack{display:flex;position:relative}
+.pb-av{width:22px;height:22px;border-radius:50%;border:2px solid var(--sf);overflow:hidden;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;margin-left:-6px;flex-shrink:0;position:relative}
+.pb-av:first-child{margin-left:0}
+.pb-av img{width:100%;height:100%;object-fit:cover}
+.pb-count{font-size:9px;color:var(--ink3);text-align:center;margin-top:2px}
+
+/* Map zoom controls */
+.map-controls{position:absolute;bottom:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+.map-btn{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--ln2);background:var(--sf);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink2);transition:all .12s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.map-btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* Chapitre slider */
+.chap-slider-wrap{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:var(--sf);border:1px solid var(--ln);border-radius:var(--rl);padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:30;box-shadow:0 2px 12px rgba(0,0,0,.08);white-space:nowrap}
+.chap-slider-label{font-size:var(--text-xs);color:var(--ink2);min-width:100px;text-align:center}
+input[type=range]{-webkit-appearance:none;width:180px;height:3px;background:var(--ln);border-radius:99px;outline:none;cursor:pointer;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--sf);cursor:pointer}
+.slider-prev,.slider-next{width:26px;height:26px;border-radius:6px;border:1px solid var(--ln);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink2);transition:all .12s}
+.slider-prev:hover,.slider-next:hover{border-color:var(--ink);color:var(--ink)}
+.slider-prev svg,.slider-next svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* Panel info perso/lieu on map click */
+.info-panel{position:absolute;top:16px;right:16px;width:220px;background:var(--sf);border:1px solid var(--ln);border-radius:var(--rl);padding:14px;z-index:30;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.info-panel-close{position:absolute;top:10px;right:10px;cursor:pointer;color:var(--ink3);font-size:16px;line-height:1;transition:color .1s}
+.info-panel-close:hover{color:var(--ink)}
+.ip-title{font-size:var(--text-base);font-weight:500;margin-bottom:3px;margin-right:16px}
+.ip-sub{font-size:var(--text-xs);color:var(--ink3);margin-bottom:10px}
+.ip-persos{display:flex;flex-direction:column;gap:5px}
+.ip-perso{display:flex;align-items:center;gap:7px;font-size:var(--text-xs);color:var(--ink2)}
+.ip-av{width:20px;height:20px;border-radius:50%;background:var(--sf3);border:1px solid var(--ln);display:flex;align-items:center;justify-content:center;font-size:8px;overflow:hidden;flex-shrink:0}
+.ip-av img{width:100%;height:100%;object-fit:cover}
+.ip-link{font-size:var(--text-xs);color:var(--ink3);text-decoration:none;margin-top:8px;display:block}
+.ip-link:hover{color:var(--ink)}
+
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r);font-family:var(--sans);font-size:var(--text-sm);font-weight:500;cursor:pointer;border:1px solid;transition:all .12s}
+.bto{background:transparent;border-color:var(--ln2);color:var(--ink2)}.bto:hover{border-color:var(--ink);color:var(--ink)}
+.btsm{padding:5px 9px;font-size:var(--text-xs)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Accueil</a>
+  <span class="tb-title">Timeline & Carte</span>
+  <div class="tb-r">
+    <div class="view-tog">
+      <button class="vt-btn active" id="btnTL" onclick="switchView('timeline')">Timeline</button>
+      <button class="vt-btn" id="btnMap" onclick="switchView('map')">Carte</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS BAR -->
+<div class="controls" id="controlsBar">
+  <span class="ctl-label">Filtrer</span>
+  <div id="filterChips" style="display:flex;gap:5px"></div>
+  <div class="ctl-sep"></div>
+  <span class="ctl-label">Perso</span>
+  <select class="ctl-sel" id="filterPerso" onchange="render()"><option value="">Tous</option></select>
+  <div class="ctl-sep"></div>
+  <span class="ctl-label">Lieu</span>
+  <select class="ctl-sel" id="filterLieu" onchange="render()"><option value="">Tous</option></select>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainArea">
+  <div class="empty-state">
+    <h3>Aucune donnée</h3>
+    <p>Créez des scènes dans le module <a href="scenes.html">Scènes</a><br>pour générer la timeline et la carte.</p>
+  </div>
+</div>
+
+<script src="arcanum.js"></script>
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentView = 'timeline';
+let focusLieuId = null;    // for map info panel
+let mapChapIdx  = 0;       // current chapter index for map slider
+let mapZoom     = 1;
+let mapPanX     = 0, mapPanY = 0;
+let mapDragging = false, mdx = 0, mdy = 0;
+let dimmedLieux = new Set(); // hidden in timeline legend
+
+// ═══════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════
+function buildControls() {
+  const chaps = ARCANUM.Chapitres.list();
+  const chars  = ARCANUM.Chars.list();
+  const lieux  = Object.values(ARCANUM.Lieux.all());
+
+  // Perso filter
+  const fp = document.getElementById('filterPerso');
+  fp.innerHTML = '<option value="">Tous</option>' +
+    chars.map(c => `<option value="${c.id}">${esc(ARCANUM.Chars.name(c.id))}</option>`).join('');
+
+  // Lieu filter
+  const fl = document.getElementById('filterLieu');
+  fl.innerHTML = '<option value="">Tous</option>' +
+    lieux.map(l => `<option value="${l.id}">${esc(ARCANUM.Lieux.fullName(l.id))}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// VIEW SWITCH
+// ═══════════════════════════════════════════════
+function switchView(v) {
+  currentView = v;
+  document.getElementById('btnTL').classList.toggle('active', v==='timeline');
+  document.getElementById('btnMap').classList.toggle('active', v==='map');
+  render();
+}
+
+function render() {
+  const chaps = ARCANUM.Chapitres.list();
+  const scenes = Object.values(ARCANUM.Scenes.all());
+  if (!chaps.length || !scenes.length) {
+    document.getElementById('mainArea').innerHTML = `<div class="empty-state"><h3>Aucune donnée</h3><p>Créez des scènes dans <a href="scenes.html">Scènes</a> pour générer la timeline et la carte.</p></div>`;
+    return;
+  }
+  if (currentView === 'timeline') renderTimeline();
+  else renderMap();
+}
+
+// ═══════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════
+function renderTimeline() {
+  const chaps   = ARCANUM.Chapitres.list();
+  const matrix  = ARCANUM.Scenes.matrice(); // { chapId: { charId: lieuId } }
+  const allLieu = ARCANUM.Lieux.all();
+  const filterPerso = document.getElementById('filterPerso').value;
+  const filterLieu  = document.getElementById('filterLieu').value;
+  ARCANUM.resetColorCache();
+
+  // All chars that appear in at least one scene
+  let charIds = [...new Set(Object.values(matrix).flatMap(row => Object.keys(row)))];
+  if (filterPerso) charIds = charIds.filter(id => id === filterPerso);
+
+  // All lieu ids seen
+  const lieuIds = [...new Set(Object.values(matrix).flatMap(row => Object.values(row)))];
+
+  // Build legend
+  const legendHtml = lieuIds.filter(id => !dimmedLieux.has(id)).length < lieuIds.length
+    ? '' : '';
+  const legendItems = lieuIds.map(id => {
+    const l = allLieu[id];
+    const col = ARCANUM.lieuColor(id);
+    const dimmed = dimmedLieux.has(id) ? ' dimmed' : '';
+    return `<div class="leg-item${dimmed}" onclick="toggleLieuDim('${id}')">
+      <div class="leg-dot" style="background:${col}"></div>
+      <span>${esc(l?.nom || '—')}</span>
+      ${l?.type==='vaisseau' ? '<span style="font-size:9px;color:var(--ink3)">(vaisseau)</span>' : ''}
+    </div>`;
+  }).join('');
+
+  // Group chars by first appearance lieu type for visual grouping (optional)
+  // Sort: chars that appear more get top rows
+  charIds.sort((a, b) => {
+    const countA = chaps.filter(c => matrix[c.id]?.[a]).length;
+    const countB = chaps.filter(c => matrix[c.id]?.[b]).length;
+    return countB - countA;
+  });
+
+  // Build table
+  // Header
+  const thCells = chaps.map(ch => `
+    <th class="th-chap">
+      <div class="chap-header">
+        <div class="chap-num">Ch.${ch.numero}</div>
+        <div class="chap-title-hdr">${esc(ch.titre||'')}</div>
+        ${ch.dateFiction?`<div class="chap-date-hdr">${esc(ch.dateFiction)}</div>`:''}
+      </div>
+    </th>`).join('');
+
+  // Rows
+  let rows = '';
+  let lastActe = null;
+
+  charIds.forEach(charId => {
+    const char = ARCANUM.Chars.get(charId);
+    const av = char?.image
+      ? `<div class="perso-av"><img src="${char.image}" alt=""></div>`
+      : `<div class="perso-av">${ARCANUM.Chars.initials(charId)}</div>`;
+
+    const cells = chaps.map((ch, idx) => {
+      const lieuId = matrix[ch.id]?.[charId];
+      if (filterLieu && lieuId && lieuId !== filterLieu) {
+        return `<td class="data-cell cell-empty"><div class="cell-block"></div></td>`;
+      }
+      if (!lieuId || dimmedLieux.has(lieuId)) {
+        return `<td class="data-cell cell-empty"><div class="cell-block"></div></td>`;
+      }
+      const lieu = allLieu[lieuId];
+      const col  = ARCANUM.lieuColor(lieuId);
+      // Text color: dark or light based on bg
+      const textCol = isLightColor(col) ? '#1a1917' : '#fff';
+      // Transition marker (moved to different lieu vs previous chap)
+      const prevLieu = idx > 0 ? matrix[chaps[idx-1].id]?.[charId] : null;
+      const hasTrans = prevLieu && prevLieu !== lieuId;
+
+      // Get scene details for tooltip
+      const scenesHere = ARCANUM.Scenes.byChap(ch.id).filter(s =>
+        s.lieuId === lieuId && (s.personnageIds||[]).includes(charId)
+      );
+      const sceneInfo = scenesHere.map(s => s.titre||'Scène').join(', ');
+
+      return `<td class="data-cell" onclick="showCellInfo('${charId}','${ch.id}')">
+        <div class="cell-block" style="background:${col}20;border:1.5px solid ${col}40">
+          <span class="cell-lieu-name" style="color:${col}">${esc(lieu?.nom||'—')}</span>
+          ${hasTrans?`<div class="cell-transition">→</div>`:''}
+        </div>
+        <div class="cell-tooltip">${esc(lieu?.nom||'?')}${sceneInfo?` · ${sceneInfo}`:''}</div>
+      </td>`;
+    }).join('');
+
+    rows += `<tr>
+      <td class="col-perso">
+        <div class="perso-cell">
+          ${av}
+          <div style="min-width:0">
+            <div class="perso-name">${esc(ARCANUM.Chars.name(charId))}</div>
+            <div class="perso-role">${esc(char?.role||'')}</div>
+          </div>
+        </div>
+      </td>
+      ${cells}
+    </tr>`;
+  });
+
+  if (!charIds.length) {
+    document.getElementById('mainArea').innerHTML = `<div class="empty-state"><h3>Aucun personnage</h3><p>Ajoutez des personnages à vos scènes.</p></div>`;
+    return;
+  }
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="tl-wrap" id="tlWrap">
+      <table class="tl-table" id="tlTable">
+        <thead><tr>
+          <th class="th-perso">
+            <div class="th-perso-inner">
+              <span class="th-perso-txt">Personnage</span>
+            </div>
+          </th>
+          ${thCells}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span class="leg-title">Lieux</span>
+      ${legendItems}
+      ${dimmedLieux.size?`<button class="btn bto btsm" onclick="dimmedLieux.clear();render()">Tout afficher</button>`:''}
+    </div>`;
+}
+
+function toggleLieuDim(id) {
+  if (dimmedLieux.has(id)) dimmedLieux.delete(id);
+  else dimmedLieux.add(id);
+  render();
+}
+
+function isLightColor(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return (r*299 + g*587 + b*114) / 1000 > 155;
+}
+
+function showCellInfo(charId, chapId) {
+  // Could open a detail panel — for now just go to scenes
+}
+
+// ═══════════════════════════════════════════════
+// MAP VIEW
+// ═══════════════════════════════════════════════
+function renderMap() {
+  const chaps   = ARCANUM.Chapitres.list();
+  const allLieu = ARCANUM.Lieux.all();
+  ARCANUM.resetColorCache();
+
+  if (!chaps.length) {
+    document.getElementById('mainArea').innerHTML = `<div class="empty-state"><h3>Aucun chapitre</h3><p>Créez des chapitres et des scènes d'abord.</p></div>`;
+    return;
+  }
+  if (mapChapIdx >= chaps.length) mapChapIdx = chaps.length - 1;
+  const currentChap = chaps[mapChapIdx];
+  const matrix = ARCANUM.Scenes.matrice();
+
+  // Assign positions to lieux
+  const positions = computeMapPositions(allLieu);
+
+  // Who is where this chapter
+  const charPositions = {}; // lieuId -> [charId]
+  const chapRow = matrix[currentChap.id] || {};
+  Object.entries(chapRow).forEach(([charId, lieuId]) => {
+    if (!charPositions[lieuId]) charPositions[lieuId] = [];
+    charPositions[lieuId].push(charId);
+  });
+
+  // Build map HTML
+  const W = 1200, H = 800;
+
+  // SVG trajectories layer
+  let trajSvg = `<svg class="traj-path" viewBox="0 0 ${W} ${H}" style="width:${W}px;height:${H}px">`;
+  const filterPerso = document.getElementById('filterPerso').value;
+
+  // Draw trajectories: for each perso, draw path through all chapters
+  const charIds = filterPerso ? [filterPerso] : [...new Set(Object.values(matrix).flatMap(r => Object.keys(r)))];
+  charIds.forEach(charId => {
+    const path = chaps.map(ch => {
+      const lieuId = matrix[ch.id]?.[charId];
+      if (!lieuId) return null;
+      return positions[lieuId];
+    });
+    // Draw segments between consecutive non-null positions
+    for (let i = 1; i < path.length; i++) {
+      const from = path[i-1], to = path[i];
+      if (!from || !to || (from.x === to.x && from.y === to.y)) continue;
+      const col = ARCANUM.lieuColor(matrix[chaps[i-1].id]?.[charId]) || '#d0cfc9';
+      const alpha = i <= mapChapIdx ? '0.35' : '0.08';
+      const dashArr = i > mapChapIdx ? '5,4' : 'none';
+      // Curved line
+      const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2 - 30;
+      trajSvg += `<path d="M${from.x},${from.y} Q${mx},${my} ${to.x},${to.y}"
+        fill="none" stroke="${col}" stroke-width="2" stroke-opacity="${alpha}"
+        ${dashArr!=='none'?`stroke-dasharray="${dashArr}"`:''}/>`;
+    }
+    // Draw movement arrow at current chapter
+    if (mapChapIdx > 0) {
+      const cur = path[mapChapIdx], prev = path[mapChapIdx-1];
+      if (cur && prev && (cur.x !== prev.x || cur.y !== prev.y)) {
+        const col = ARCANUM.lieuColor(matrix[currentChap.id]?.[charId]) || '#1a1917';
+        const dx = cur.x - prev.x, dy = cur.y - prev.y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        const ux = dx/dist, uy = dy/dist;
+        const ax = cur.x - ux*22, ay = cur.y - uy*22;
+        trajSvg += `<line x1="${prev.x + ux*22}" y1="${prev.y + uy*22}" x2="${ax}" y2="${ay}"
+          stroke="${col}" stroke-width="2.5" stroke-opacity="0.7"
+          marker-end="url(#mapArrow)"/>`;
+      }
+    }
+  });
+  trajSvg += `<defs><marker id="mapArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs></svg>`;
+
+  // Place lieu nodes
+  let nodesHtml = '';
+  Object.values(allLieu).forEach(lieu => {
+    const pos = positions[lieu.id];
+    if (!pos) return;
+    const col  = ARCANUM.lieuColor(lieu.id);
+    const persosHere = charPositions[lieu.id] || [];
+
+    if (lieu.type === 'planete') {
+      const sz = 52;
+      const img = lieu.image ? `<img src="${lieu.image}" alt="">` : initText(lieu.nom);
+      const childCount = Object.values(allLieu).filter(l => l.parentId === lieu.id).length;
+      nodesHtml += `<div class="planet-node" style="left:${pos.x}px;top:${pos.y}px" onclick="showLieuPanel('${lieu.id}')">
+        <div class="planet-circle" style="width:${sz}px;height:${sz}px;background:${col}">${img}</div>
+        <div class="planet-label">${esc(lieu.nom||'Planète')}</div>
+        ${childCount?`<div class="planet-sub">${childCount} ville${childCount>1?'s':''}</div>`:''}
+      </div>`;
+    } else if (lieu.type === 'ville') {
+      nodesHtml += `<div class="city-node" style="left:${pos.x}px;top:${pos.y}px" onclick="showLieuPanel('${lieu.id}')">
+        <div class="city-circle" style="background:${col}">${initText(lieu.nom)}</div>
+        <div class="city-label">${esc(lieu.nom||'Ville')}</div>
+      </div>`;
+    } else if (lieu.type === 'vaisseau') {
+      nodesHtml += `<div class="ship-node" style="left:${pos.x}px;top:${pos.y}px" onclick="showLieuPanel('${lieu.id}')">
+        <div class="ship-icon" style="background:${col}">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 19h20L12 2z"/><line x1="12" y1="9" x2="12" y2="15"/></svg>
+        </div>
+        <div class="ship-label">${esc(lieu.nom||'Vaisseau')}</div>
+      </div>`;
+    }
+
+    // Perso bubbles at this lieu
+    if (persosHere.length) {
+      const offset = lieu.type === 'planete' ? 34 : lieu.type === 'vaisseau' ? 20 : 16;
+      const avatars = persosHere.slice(0, 5).map(cid => {
+        const c = ARCANUM.Chars.get(cid);
+        return c?.image
+          ? `<div class="pb-av" style="border-color:${ARCANUM.lieuColor(lieu.id)}"><img src="${c.image}" alt=""></div>`
+          : `<div class="pb-av" style="border-color:${ARCANUM.lieuColor(lieu.id)}">${ARCANUM.Chars.initials(cid)}</div>`;
+      }).join('');
+      const extra = persosHere.length > 5 ? `<div class="pb-av" style="font-size:8px;color:var(--ink2)">+${persosHere.length-5}</div>` : '';
+      nodesHtml += `<div class="perso-bubble" style="left:${pos.x}px;top:${pos.y - offset - 18}px">
+        <div class="pb-stack">${avatars}${extra}</div>
+        ${persosHere.length>1?`<div class="pb-count">${persosHere.length} ici</div>`:''}
+      </div>`;
+    }
+  });
+
+  // Chapter slider
+  const sliderHtml = `<div class="chap-slider-wrap">
+    <button class="slider-prev" onclick="setMapChap(${Math.max(0,mapChapIdx-1)})"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <input type="range" min="0" max="${chaps.length-1}" value="${mapChapIdx}" oninput="setMapChap(+this.value)">
+    <div class="chap-slider-label">Ch.${currentChap.numero} — ${esc(currentChap.titre||'Sans titre')}${currentChap.dateFiction?`<br><span style="font-size:9px;color:var(--ink3)">${esc(currentChap.dateFiction)}</span>`:''}</div>
+    <button class="slider-next" onclick="setMapChap(${Math.min(chaps.length-1,mapChapIdx+1)})"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>`;
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="map-wrap">
+      <div class="map-canvas" id="mapCanvas">
+        <div class="map-inner" id="mapInner" style="width:${W}px;height:${H}px;transform:translate(${mapPanX}px,${mapPanY}px) scale(${mapZoom})">
+          ${trajSvg}
+          ${nodesHtml}
+        </div>
+      </div>
+      <div class="map-controls">
+        <div class="map-btn" onclick="zoomMap(1.2)" title="Zoom +">+</div>
+        <div class="map-btn" onclick="zoomMap(0.83)" title="Zoom −">−</div>
+        <div class="map-btn" onclick="resetMapView()" title="Réinitialiser" style="font-size:var(--text-sm)">⊙</div>
+      </div>
+      ${sliderHtml}
+      <div id="infoPanel" style="display:none"></div>
+    </div>`;
+
+  initMapDrag();
+}
+
+function setMapChap(idx) {
+  mapChapIdx = idx;
+  renderMap();
+}
+
+function initText(nom) {
+  return (nom||'?').slice(0,2).toUpperCase();
+}
+
+// ── MAP POSITIONS ──────────────────────────────────────────────
+function computeMapPositions(allLieu) {
+  const positions = {};
+  const planetes = Object.values(allLieu).filter(l => l.type === 'planete');
+  const vaisseaux = Object.values(allLieu).filter(l => l.type === 'vaisseau');
+  const W = 1200, H = 800;
+  const margin = 120;
+
+  // Arrange planets in a rough grid
+  planetes.forEach((p, i) => {
+    const cols = Math.ceil(Math.sqrt(planetes.length));
+    const col = i % cols, row = Math.floor(i / cols);
+    const gW = (W - margin*2) / Math.max(cols, 1);
+    const gH = (H - margin*2 - 200) / Math.max(Math.ceil(planetes.length/cols), 1);
+    const x = margin + col * gW + gW/2 + (row%2)*30;
+    const y = margin + row * gH + gH/2;
+    positions[p.id] = { x, y };
+
+    // Place cities in small orbit around parent planet
+    const villes = Object.values(allLieu).filter(l => l.parentId === p.id && l.type === 'ville');
+    villes.forEach((v, j) => {
+      const angle = (j / Math.max(villes.length, 1)) * Math.PI * 2;
+      const orbitR = 60 + villes.length * 8;
+      positions[v.id] = { x: x + orbitR * Math.cos(angle), y: y + orbitR * Math.sin(angle) };
+    });
+  });
+
+  // Vaisseaux: place in bottom strip
+  vaisseaux.forEach((v, i) => {
+    const spacing = (W - margin*2) / Math.max(vaisseaux.length, 1);
+    positions[v.id] = { x: margin + i * spacing + spacing/2, y: H - 80 };
+  });
+
+  return positions;
+}
+
+// ── MAP DRAG / ZOOM ────────────────────────────────────────────
+function initMapDrag() {
+  const canvas = document.getElementById('mapCanvas'); if (!canvas) return;
+  canvas.addEventListener('mousedown', e => { if (e.target.closest('.planet-node,.city-node,.ship-node,.chap-slider-wrap,.map-controls')) return; mapDragging=true; mdx=e.clientX-mapPanX; mdy=e.clientY-mapPanY; });
+  window.addEventListener('mousemove', e => { if (!mapDragging) return; mapPanX=e.clientX-mdx; mapPanY=e.clientY-mdy; applyTransform(); });
+  window.addEventListener('mouseup', () => mapDragging=false);
+  canvas.addEventListener('wheel', e => { e.preventDefault(); zoomMap(e.deltaY<0?1.1:.91, e.clientX, e.clientY); }, {passive:false});
+}
+
+function applyTransform() {
+  const inner = document.getElementById('mapInner'); if (!inner) return;
+  inner.style.transform = `translate(${mapPanX}px,${mapPanY}px) scale(${mapZoom})`;
+}
+
+function zoomMap(factor, cx, cy) {
+  const canvas = document.getElementById('mapCanvas'); if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (cx ?? rect.width/2) - rect.left;
+  const py = (cy ?? rect.height/2) - rect.top;
+  mapPanX = px - (px - mapPanX) * factor;
+  mapPanY = py - (py - mapPanY) * factor;
+  mapZoom = Math.max(0.3, Math.min(3, mapZoom * factor));
+  applyTransform();
+}
+
+function resetMapView() {
+  mapZoom=1; mapPanX=0; mapPanY=0;
+  const canvas = document.getElementById('mapCanvas'); if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  mapPanX = rect.width/2 - 600; mapPanY = rect.height/2 - 400;
+  applyTransform();
+}
+
+// ── INFO PANEL ─────────────────────────────────────────────────
+function showLieuPanel(lieuId) {
+  const panel = document.getElementById('infoPanel'); if (!panel) return;
+  const lieu = ARCANUM.Lieux.get(lieuId); if (!lieu) return;
+  const chaps = ARCANUM.Chapitres.list();
+  const matrix = ARCANUM.Scenes.matrice();
+  const currentChap = chaps[mapChapIdx];
+  const here = currentChap ? Object.entries(matrix[currentChap.id]||{}).filter(([,lid])=>lid===lieuId).map(([cid])=>cid) : [];
+  const persosHtml = here.map(cid => {
+    const c = ARCANUM.Chars.get(cid);
+    const av = c?.image ? `<div class="ip-av"><img src="${c.image}" alt=""></div>` : `<div class="ip-av">${ARCANUM.Chars.initials(cid)}</div>`;
+    return `<div class="ip-perso">${av}${esc(ARCANUM.Chars.name(cid))}</div>`;
+  }).join('') || '<div style="font-size:var(--text-xs);color:var(--ink3)">Personne à ce chapitre.</div>';
+
+  panel.style.display = 'block';
+  panel.innerHTML = `<div class="info-panel">
+    <span class="info-panel-close" onclick="document.getElementById('infoPanel').style.display='none'">×</span>
+    <div class="ip-title">${esc(lieu.nom||'Lieu')}</div>
+    <div class="ip-sub">${esc(lieu.type)} ${lieu.description?'· '+lieu.description.slice(0,40)+'…':''}</div>
+    <div class="ip-persos">${persosHtml}</div>
+    <a class="ip-link" href="lieux.html">Ouvrir la fiche →</a>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+buildControls();
+// Init map pan to center
+const doInit = () => {
+  const canvas = document.getElementById('mapCanvas');
+  if (canvas) { const r = canvas.getBoundingClientRect(); mapPanX=r.width/2-600; mapPanY=r.height/2-400; }
+};
+render();
+setTimeout(doInit, 50);
+</script>
+</body>
+</html>
