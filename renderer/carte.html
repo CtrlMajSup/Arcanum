@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Arcanum — Cartes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT PANEL — lieu selector + calques ── */
+.lpanel{width:clamp(180px,18vw,240px);flex-shrink:0;border-right:1px solid var(--ln);background:var(--sf);display:flex;flex-direction:column;overflow:hidden}
+.lp-section{padding:var(--sp-4) var(--sp-4) var(--sp-3);border-bottom:1px solid var(--ln)}
+.lp-label{font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:var(--sp-3);font-weight:500}
+.lieu-sel{width:100%;font-family:var(--sans);font-size:var(--text-sm);padding:var(--sp-2) var(--sp-3);border:1px solid var(--ln);border-radius:var(--r);background:var(--sf2);color:var(--ink);outline:none;cursor:pointer}
+.lieu-sel:focus{border-color:var(--ink)}
+.carte-sel-row{display:flex;gap:var(--sp-2);margin-top:var(--sp-3)}
+.carte-sel{flex:1;font-family:var(--sans);font-size:var(--text-xs);padding:var(--sp-2) var(--sp-3);border:1px solid var(--ln);border-radius:var(--r);background:var(--sf2);color:var(--ink);outline:none;cursor:pointer}
+.icon-btn{width:28px;height:28px;border-radius:var(--r);border:1px solid var(--ln);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .12s;color:var(--ink2)}
+.icon-btn:hover{border-color:var(--ink2);color:var(--ink)}
+.icon-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* CALQUES */
+.layers-list{flex:1;overflow-y:auto;padding:var(--sp-2) var(--sp-3)}
+.layer-item{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r);cursor:pointer;border:1px solid transparent;transition:all .12s;margin-bottom:2px}
+.layer-item:hover{background:var(--sf2)}.layer-item.active{background:var(--sf2);border-color:var(--ln2)}
+.layer-vis{width:16px;height:16px;border-radius:3px;border:1px solid var(--ln);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--sf3)}
+.layer-vis.on{background:var(--ink);border-color:var(--ink)}
+.layer-vis svg{width:9px;height:9px;stroke:white;fill:none;stroke-width:2.5}
+.layer-name{flex:1;font-size:var(--text-xs);color:var(--ink2)}
+.layer-item.active .layer-name{color:var(--ink);font-weight:500}
+.add-layer-btn{width:100%;padding:var(--sp-2);border:1px dashed var(--ln2);border-radius:var(--r);background:transparent;font-family:var(--sans);font-size:var(--text-xs);color:var(--ink3);cursor:pointer;margin:var(--sp-2) 0;transition:all .12s}
+.add-layer-btn:hover{border-color:var(--ink2);color:var(--ink2)}
+
+/* ── TOOLBAR ── */
+.toolbar{height:46px;flex-shrink:0;display:flex;align-items:center;padding:0 var(--sp-4);border-bottom:1px solid var(--ln);background:var(--sf);gap:var(--sp-2)}
+.tool-group{display:flex;gap:2px;background:var(--sf2);border:1px solid var(--ln);border-radius:var(--r);padding:2px}
+.tool-btn{width:32px;height:30px;border-radius:5px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink2);transition:all .1s;position:relative}
+.tool-btn:hover{background:var(--sf);color:var(--ink)}
+.tool-btn.active{background:var(--sf);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tool-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6}
+.tool-sep{width:1px;height:24px;background:var(--ln);margin:0 var(--sp-2)}
+.color-btn{width:26px;height:26px;border-radius:5px;border:2px solid var(--ln);cursor:pointer;transition:border-color .12s;flex-shrink:0}
+.color-btn:hover{border-color:var(--ink2)}
+.stroke-sel{font-family:var(--sans);font-size:var(--text-xs);padding:2px 6px;border:1px solid var(--ln);border-radius:5px;background:transparent;color:var(--ink2);outline:none;cursor:pointer;height:28px}
+.opacity-wrap{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-xs);color:var(--ink3)}
+.opacity-wrap input{width:70px;height:3px}
+.tool-label{font-size:var(--text-xs);color:var(--ink3);padding:0 var(--sp-2)}
+
+/* ── CANVAS AREA ── */
+.canvas-wrap{flex:1;overflow:hidden;position:relative;background:var(--sf3);cursor:crosshair}
+.canvas-wrap.tool-select{cursor:default}
+.canvas-wrap.tool-pan{cursor:grab}
+.canvas-wrap.tool-pan.panning{cursor:grabbing}
+#mapCanvas{display:block;touch-action:none}
+
+/* ── PROPERTIES PANEL ── */
+.rpanel{width:clamp(160px,16vw,220px);flex-shrink:0;border-left:1px solid var(--ln);background:var(--sf);overflow-y:auto;display:flex;flex-direction:column}
+.rp-section{padding:var(--sp-4) var(--sp-4) var(--sp-3);border-bottom:1px solid var(--ln)}
+.rp-label{font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:var(--sp-3);font-weight:500}
+.prop-row{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)}
+.prop-label{font-size:var(--text-xs);color:var(--ink2);flex-shrink:0;width:56px}
+.prop-inp{flex:1;font-family:var(--sans);font-size:var(--text-xs);color:var(--ink);background:var(--sf2);border:1px solid var(--ln);border-radius:5px;padding:var(--sp-2) var(--sp-3);outline:none;width:100%}
+.prop-inp:focus{border-color:var(--ink)}
+.prop-color{width:28px;height:28px;border:1px solid var(--ln);border-radius:5px;cursor:pointer;padding:2px}
+.no-sel{font-size:var(--text-xs);color:var(--ink3);padding:var(--sp-5);text-align:center;line-height:1.8}
+
+/* STATUS */
+.canvas-status{position:absolute;bottom:var(--sp-3);left:50%;transform:translateX(-50%);background:rgba(26,25,23,.7);color:rgba(255,255,255,.85);font-size:var(--text-xs);padding:var(--sp-2) var(--sp-4);border-radius:99px;pointer-events:none;font-family:var(--mono)}
+.zoom-controls{position:absolute;bottom:var(--sp-4);right:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)}
+.zoom-btn{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--ln2);background:var(--sf);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:var(--text-md);color:var(--ink2);transition:all .12s}
+.zoom-btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ELEMENT COLORS */
+.color-presets{display:flex;flex-wrap:wrap;gap:3px;margin-top:var(--sp-2)}
+.cp{width:18px;height:18px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:all .1s}
+.cp:hover{transform:scale(1.15)}.cp.sel{border-color:var(--ink)}
+
+/* TOPOGRAPHIC ZONE COLORS */
+.topo-presets{display:flex;flex-wrap:wrap;gap:4px;margin-top:var(--sp-2)}
+.topo-btn{font-size:var(--text-xs);padding:2px 7px;border-radius:4px;border:1px solid rgba(0,0,0,.1);cursor:pointer;transition:all .1s;color:#333}
+.topo-btn:hover{opacity:.85}
+
+/* EMPTY STATE */
+.map-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-4);color:var(--ink3);pointer-events:none}
+.map-empty svg{width:48px;height:48px;stroke:var(--ln2);fill:none;stroke-width:1}
+.map-empty p{font-size:var(--text-sm);text-align:center;line-height:1.8}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Accueil
+  </a>
+  <span class="page-title">Cartes</span>
+  <div class="topbar-r">
+    <button class="btn btn-outline" style="font-size:var(--text-xs)" onclick="exportSVG()">
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export SVG
+    </button>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="tool-group" id="toolGroup">
+    <button class="tool-btn active" data-tool="select" title="Sélectionner (V)" onclick="setTool('select',this)">
+      <svg viewBox="0 0 24 24"><path d="M5 3l14 9-7 1-4 7z"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="pan" title="Déplacer (H)" onclick="setTool('pan',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+    </button>
+  </div>
+  <div class="tool-sep"></div>
+  <div class="tool-group">
+    <button class="tool-btn" data-tool="pen" title="Tracé libre (P)" onclick="setTool('pen',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="line" title="Ligne (L)" onclick="setTool('line',this)">
+      <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="rect" title="Rectangle (R)" onclick="setTool('rect',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="ellipse" title="Ellipse / Cercle (E)" onclick="setTool('ellipse',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="polygon" title="Polygone / Zone (G)" onclick="setTool('polygon',this)">
+      <svg viewBox="0 0 24 24"><polygon points="12 2 22 20 2 20"/></svg>
+    </button>
+  </div>
+  <div class="tool-sep"></div>
+  <div class="tool-group">
+    <button class="tool-btn" data-tool="text" title="Texte / Étiquette (T)" onclick="setTool('text',this)">
+      <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="marker" title="Marqueur de lieu (M)" onclick="setTool('marker',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    </button>
+  </div>
+  <div class="tool-sep"></div>
+  <!-- Couleur trait -->
+  <span class="tool-label">Trait</span>
+  <div id="strokeSwatch" class="color-btn" style="background:#1a1917" onclick="document.getElementById('strokeInput').click()"></div>
+  <input type="color" id="strokeInput" value="#1a1917" style="display:none" oninput="setStrokeColor(this.value)">
+  <!-- Couleur remplissage -->
+  <span class="tool-label">Fond</span>
+  <div id="fillSwatch" class="color-btn" style="background:transparent;background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,4px 4px" onclick="document.getElementById('fillInput').click()"></div>
+  <input type="color" id="fillInput" value="#7BAF7B" style="display:none" oninput="setFillColor(this.value)">
+  <button class="tool-btn" title="Aucun fond" onclick="setFillNone()" style="font-size:10px;color:var(--ink3);width:24px">∅</button>
+  <div class="tool-sep"></div>
+  <select class="stroke-sel" id="strokeWidth" onchange="setStrokeWidth(this.value)">
+    <option value="1">1px</option>
+    <option value="2" selected>2px</option>
+    <option value="3">3px</option>
+    <option value="5">5px</option>
+    <option value="8">8px</option>
+  </select>
+  <div class="opacity-wrap">
+    <span>Opacité</span>
+    <input type="range" id="opacitySlider" min="10" max="100" value="100" oninput="setOpacity(this.value)">
+    <span id="opacityVal">100%</span>
+  </div>
+  <div class="tool-sep"></div>
+  <!-- Actions -->
+  <button class="tool-btn" title="Supprimer la sélection (Suppr)" onclick="deleteSelected()">
+    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+  </button>
+  <button class="tool-btn" title="Monter" onclick="moveLayer(1)">
+    <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+  <button class="tool-btn" title="Descendre" onclick="moveLayer(-1)">
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+</div>
+
+<!-- APP BODY -->
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="lpanel">
+    <div class="lp-section">
+      <div class="lp-label">Lieu</div>
+      <select class="lieu-sel" id="lieuSel" onchange="onLieuChange(this.value)">
+        <option value="">— Choisir un lieu —</option>
+      </select>
+      <div class="carte-sel-row">
+        <select class="carte-sel" id="carteSel" onchange="onCarteChange(this.value)">
+          <option value="">— Carte —</option>
+        </select>
+        <button class="icon-btn" title="Nouvelle carte" onclick="newCarte()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="icon-btn" title="Supprimer la carte" onclick="deleteCarte()">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="lp-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0">
+      <div style="padding:var(--sp-3) var(--sp-4) var(--sp-2);border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between">
+        <div class="lp-label" style="margin:0">Calques</div>
+      </div>
+      <div class="layers-list" id="layersList"></div>
+      <div style="padding:var(--sp-2) var(--sp-3)">
+        <button class="add-layer-btn" onclick="addLayer()">+ Ajouter un calque</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap tool-select" id="canvasWrap">
+    <canvas id="mapCanvas"></canvas>
+    <div class="map-empty" id="mapEmpty">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <p>Sélectionnez un lieu et créez<br>ou ouvrez une carte pour commencer.</p>
+    </div>
+    <div class="canvas-status" id="canvasStatus" style="display:none"></div>
+    <div class="zoom-controls">
+      <div class="zoom-btn" onclick="zoom(1.2)">+</div>
+      <div class="zoom-btn" onclick="zoom(0.83)">−</div>
+      <div class="zoom-btn" onclick="resetView()" style="font-size:var(--text-xs)">⊙</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL — properties -->
+  <div class="rpanel">
+    <div class="rp-section">
+      <div class="rp-label">Propriétés</div>
+      <div id="propsContent"><div class="no-sel">Sélectionnez un élément pour modifier ses propriétés.</div></div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-label">Couleurs rapides</div>
+      <div class="color-presets" id="colorPresets"></div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-label">Zones topographiques</div>
+      <div class="topo-presets" id="topoPresets"></div>
+    </div>
+  </div>
+</div>
+
+<script src="arcanum-client.js"></script>
+<script src="arcanum.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CARTE EDITOR — moteur de dessin vectoriel
+// Éléments : pen, line, rect, ellipse, polygon, text, marker
+// Stockés en JSON dans la table cartes (SQLite via IPC)
+// ═══════════════════════════════════════════════════════════════
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+// ── STATE ─────────────────────────────────────────────────────
+let currentLieuId  = null;
+let currentCarteId = null;
+let carte          = null;   // objet carte complet
+
+let currentTool    = 'select';
+let currentLayerId = 'base';
+let strokeColor    = '#1a1917';
+let fillColor      = null;   // null = pas de fond
+let strokeWidth    = 2;
+let opacity        = 1;
+
+// Viewport
+let vx = 0, vy = 0, vz = 1;
+
+// Drawing state
+let isDrawing  = false;
+let isPanning  = false;
+let panStartX  = 0, panStartY = 0;
+let panStartVX = 0, panStartVY = 0;
+let currentPath = null;  // pour pen
+let polyPoints  = [];    // pour polygon
+let startX = 0, startY = 0;
+let tempEl = null;
+
+// Selection
+let selectedId = null;
+let dragOffX = 0, dragOffY = 0;
+let isDragging = false;
+
+// Canvas
+const canvas = document.getElementById('mapCanvas');
+const ctx    = canvas.getContext('2d');
+
+// ── TOPO & COLOR PRESETS ──────────────────────────────────────
+const TOPO_ZONES = [
+  { label: 'Eau profonde',  fill: '#2c6e9e', stroke: '#1a4a70' },
+  { label: 'Mer',           fill: '#5B9EC9', stroke: '#3a7ca8' },
+  { label: 'Côte',          fill: '#8FBDCF', stroke: '#5B9EC9' },
+  { label: 'Plaine',        fill: '#C8D89A', stroke: '#9aae5a' },
+  { label: 'Forêt',         fill: '#4a7c59', stroke: '#2d5c3a' },
+  { label: 'Désert',        fill: '#D4B483', stroke: '#b08a4a' },
+  { label: 'Montagne',      fill: '#9E9088', stroke: '#6e6058' },
+  { label: 'Neige',         fill: '#E8EDF0', stroke: '#b0c0c8' },
+  { label: 'Lave',          fill: '#c04a1a', stroke: '#802010' },
+  { label: 'Marais',        fill: '#7a9e78', stroke: '#4a7048' },
+  { label: 'Zone urbaine',  fill: '#C8B8A8', stroke: '#9a8878' },
+  { label: 'Route',         fill: '#e8d898', stroke: '#c8a848', strokeWidth: 3 },
+];
+const COLOR_PALETTE = ['#1a1917','#5B8DB8','#7BAF7B','#C17D6F','#9B7BB5','#C4A35A','#6AABAA','#B5727C','#E8D898','#ffffff'];
+
+function buildPresets() {
+  const cp = document.getElementById('colorPresets');
+  cp.innerHTML = COLOR_PALETTE.map(c =>
+    `<div class="cp" style="background:${c};${c==='#ffffff'?'border:1px solid var(--ln)':''}" onclick="quickColor('${c}')"></div>`
+  ).join('');
+
+  const tp = document.getElementById('topoPresets');
+  tp.innerHTML = TOPO_ZONES.map(z =>
+    `<div class="topo-btn" style="background:${z.fill};border-color:${z.stroke}"
+      onclick="applyTopo('${z.fill}','${z.stroke}',${z.strokeWidth||2})">${z.label}</div>`
+  ).join('');
+}
+
+function quickColor(col) {
+  if (currentTool === 'select' && selectedId) {
+    const el = getEl(selectedId);
+    if (el) { el.stroke = col; saveAndRedraw(); renderProps(); }
+  } else {
+    strokeColor = col;
+    document.getElementById('strokeSwatch').style.background = col;
+  }
+}
+
+function applyTopo(fill, stroke, sw) {
+  fillColor = fill;
+  strokeColor = stroke;
+  strokeWidth = sw;
+  document.getElementById('fillSwatch').style.background = fill;
+  document.getElementById('fillSwatch').style.backgroundImage = 'none';
+  document.getElementById('strokeSwatch').style.background = stroke;
+  document.getElementById('strokeWidth').value = sw;
+  if (currentTool === 'select' && selectedId) {
+    const el = getEl(selectedId);
+    if (el) { el.fill = fill; el.stroke = stroke; el.strokeWidth = sw; saveAndRedraw(); }
+  }
+}
+
+// ── LIEU / CARTE SELECTORS ────────────────────────────────────
+async function loadLieux() {
+  const all = await AC.Lieux.all();
+  const sel = document.getElementById('lieuSel');
+  const lieux = Object.values(all).sort((a,b) => (a.nom||'').localeCompare(b.nom||'','fr'));
+  sel.innerHTML = '<option value="">— Choisir un lieu —</option>' +
+    lieux.map(l => `<option value="${l.id}">${esc(l.type === 'ville' ? AC.Lieux.fullName(l.id) : l.nom)}</option>`).join('');
+}
+
+async function onLieuChange(lieuId) {
+  currentLieuId = lieuId || null;
+  currentCarteId = null;
+  carte = null;
+  await loadCartes();
+}
+
+async function loadCartes() {
+  const sel = document.getElementById('carteSel');
+  if (!currentLieuId) { sel.innerHTML = '<option value="">— Carte —</option>'; renderCanvas(); return; }
+  const cartes = await AC.Cartes.forLieu(currentLieuId);
+  sel.innerHTML = '<option value="">— Carte —</option>' +
+    cartes.map(c => `<option value="${c.id}">${esc(c.nom||'Carte')}</option>`).join('');
+  if (cartes.length === 1) { sel.value = cartes[0].id; onCarteChange(cartes[0].id); }
+  else renderCanvas();
+}
+
+async function onCarteChange(id) {
+  if (!id) { carte = null; currentCarteId = null; renderCanvas(); return; }
+  currentCarteId = id;
+  carte = await AC.Cartes.get(id);
+  if (!carte.elements) carte.elements = [];
+  if (!carte.layers) carte.layers = [{ id: 'base', nom: 'Fond', visible: true }];
+  currentLayerId = carte.layers[0]?.id || 'base';
+  document.getElementById('mapEmpty').style.display = 'none';
+  renderLayers();
+  resizeCanvas();
+  resetView();
+}
+
+async function newCarte() {
+  if (!currentLieuId) { AC.toast('Choisissez un lieu d\'abord.'); return; }
+  const nom = prompt('Nom de la carte :', 'Nouvelle carte');
+  if (!nom) return;
+  const c = {lieuId:currentLieuId,nom,elements:[],layers:[{id:'base',nom:'Fond',visible:true}],viewport:{x:0,y:0,zoom:1},width:1600,height:1200,createdAt:Date.now()};
+  c.nom = nom;
+  const saved = await AC.Cartes.save(c);
+  await loadCartes();
+  document.getElementById('carteSel').value = saved.id;
+  onCarteChange(saved.id);
+}
+
+async function deleteCarte() {
+  if (!currentCarteId) return;
+  AC.modal('Supprimer cette carte ?', 'Les données de dessin seront perdues.', async () => {
+    await AC.Cartes.delete(currentCarteId);
+    currentCarteId = null; carte = null;
+    await loadCartes();
+    renderCanvas();
+  });
+}
+
+// ── CALQUES ───────────────────────────────────────────────────
+function renderLayers() {
+  if (!carte) return;
+  const list = document.getElementById('layersList');
+  list.innerHTML = [...carte.layers].reverse().map(l =>
+    `<div class="layer-item${l.id===currentLayerId?' active':''}" onclick="selectLayer('${l.id}')">
+      <div class="layer-vis${l.visible?' on':''}" onclick="event.stopPropagation();toggleLayer('${l.id}')">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="layer-name">${esc(l.nom)}</span>
+    </div>`
+  ).join('');
+}
+
+function selectLayer(id) { currentLayerId = id; renderLayers(); }
+
+function toggleLayer(id) {
+  if (!carte) return;
+  const l = carte.layers.find(x => x.id === id);
+  if (l) l.visible = !l.visible;
+  renderLayers(); saveAndRedraw();
+}
+
+async function addLayer() {
+  if (!carte) { AC.toast('Ouvrez une carte d\'abord.'); return; }
+  const nom = prompt('Nom du calque :', 'Calque ' + (carte.layers.length + 1));
+  if (!nom) return;
+  const id = 'layer_' + Date.now().toString(36);
+  carte.layers.push({ id, nom, visible: true });
+  currentLayerId = id;
+  renderLayers();
+  await saveAndRedraw();
+}
+
+// ── OUTILS ────────────────────────────────────────────────────
+function setTool(tool, btn) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedId = null;
+  polyPoints = [];
+  const wrap = document.getElementById('canvasWrap');
+  wrap.className = 'canvas-wrap tool-' + tool;
+  renderCanvas();
+  renderProps();
+}
+
+function setStrokeColor(v) { strokeColor = v; document.getElementById('strokeSwatch').style.background = v; }
+function setFillColor(v)   { fillColor = v; document.getElementById('fillSwatch').style.background = v; document.getElementById('fillSwatch').style.backgroundImage='none'; }
+function setFillNone()     { fillColor = null; document.getElementById('fillSwatch').style.background='transparent'; document.getElementById('fillSwatch').style.backgroundImage='linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%)'; document.getElementById('fillSwatch').style.backgroundSize='8px 8px'; document.getElementById('fillSwatch').style.backgroundPosition='0 0,4px 4px'; }
+function setStrokeWidth(v) { strokeWidth = parseInt(v); }
+function setOpacity(v)     { opacity = v / 100; document.getElementById('opacityVal').textContent = v + '%'; }
+
+// ── CANVAS RESIZE ─────────────────────────────────────────────
+function resizeCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  renderCanvas();
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+// ── VIEWPORT ──────────────────────────────────────────────────
+function toCanvas(wx, wy) { return { x: (wx - vx) * vz, y: (wy - vy) * vz }; }
+function toWorld(cx, cy)  { return { x: cx / vz + vx,  y: cy / vz + vy  }; }
+
+function zoom(factor) {
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  vx = cx / vz + vx - cx / (vz * factor);
+  vy = cy / vz + vy - cy / (vz * factor);
+  vz = Math.max(0.1, Math.min(10, vz * factor));
+  renderCanvas();
+}
+
+function resetView() {
+  vx = 0; vy = 0; vz = 1;
+  renderCanvas();
+}
+
+// ── ELEMENT HELPERS ───────────────────────────────────────────
+function newId() { return 'el_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+function getEl(id) {
+  if (!carte) return null;
+  return carte.elements.find(e => e.id === id);
+}
+
+function currentLayerVisible() {
+  if (!carte) return false;
+  return carte.layers.find(l => l.id === currentLayerId)?.visible !== false;
+}
+
+// ── DRAW ELEMENT ON CANVAS ────────────────────────────────────
+function drawElement(el, isTemp = false) {
+  if (!el) return;
+  const layer = carte?.layers.find(l => l.id === el.layerId);
+  if (layer && !layer.visible && !isTemp) return;
+
+  ctx.save();
+  ctx.globalAlpha = el.opacity ?? 1;
+  ctx.strokeStyle = el.stroke || '#1a1917';
+  ctx.lineWidth   = (el.strokeWidth || 2) / vz;
+  ctx.fillStyle   = el.fill || 'transparent';
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  const isSelected = el.id === selectedId;
+  if (isSelected) {
+    ctx.shadowColor = 'rgba(37,99,171,.5)';
+    ctx.shadowBlur = 8 / vz;
+  }
+
+  switch (el.type) {
+    case 'pen': {
+      if (!el.points || el.points.length < 2) break;
+      ctx.beginPath();
+      const p0 = toCanvas(el.points[0][0], el.points[0][1]);
+      ctx.moveTo(p0.x, p0.y);
+      for (let i = 1; i < el.points.length; i++) {
+        const p = toCanvas(el.points[i][0], el.points[i][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      if (el.fill) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'line': {
+      const a = toCanvas(el.x1, el.y1), b = toCanvas(el.x2, el.y2);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      break;
+    }
+    case 'rect': {
+      const a = toCanvas(el.x, el.y);
+      const w = el.w * vz, h = el.h * vz;
+      if (el.fill) { ctx.fillRect(a.x, a.y, w, h); }
+      ctx.strokeRect(a.x, a.y, w, h);
+      break;
+    }
+    case 'ellipse': {
+      const c = toCanvas(el.cx, el.cy);
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, el.rx * vz, el.ry * vz, 0, 0, Math.PI * 2);
+      if (el.fill) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'polygon': {
+      if (!el.points || el.points.length < 2) break;
+      ctx.beginPath();
+      const p0 = toCanvas(el.points[0][0], el.points[0][1]);
+      ctx.moveTo(p0.x, p0.y);
+      for (let i = 1; i < el.points.length; i++) {
+        const p = toCanvas(el.points[i][0], el.points[i][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      if (el.fill) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'text': {
+      const p = toCanvas(el.x, el.y);
+      ctx.font = `${(el.fontSize || 14) * vz}px DM Sans, sans-serif`;
+      ctx.fillStyle = el.fill || el.stroke || '#1a1917';
+      ctx.shadowBlur = 0;
+      if (el.background) {
+        const m = ctx.measureText(el.text || '');
+        const pad = 4 * vz;
+        ctx.fillStyle = el.background;
+        ctx.fillRect(p.x - pad, p.y - (el.fontSize||14)*vz, m.width + pad*2, (el.fontSize||14)*vz + pad);
+        ctx.fillStyle = el.fill || '#1a1917';
+      }
+      ctx.fillText(el.text || '', p.x, p.y);
+      break;
+    }
+    case 'marker': {
+      const p = toCanvas(el.x, el.y);
+      const r = 8 * vz;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - r * 1.5, r, 0, Math.PI * 2);
+      ctx.fillStyle = el.fill || el.stroke || '#C17D6F';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1;
+      ctx.stroke();
+      // pin stem
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - r * 0.5);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = el.fill || el.stroke || '#C17D6F';
+      ctx.lineWidth = 2 * vz; ctx.stroke();
+      // label
+      if (el.label) {
+        ctx.font = `${11 * vz}px DM Sans, sans-serif`;
+        ctx.fillStyle = '#1a1917';
+        ctx.shadowBlur = 0;
+        ctx.fillText(el.label, p.x + r + 3 * vz, p.y - r);
+      }
+      break;
+    }
+  }
+  ctx.restore();
+
+  // Selection handles
+  if (isSelected) drawHandles(el);
+}
+
+function drawHandles(el) {
+  ctx.save();
+  ctx.strokeStyle = '#2563ab';
+  ctx.fillStyle   = '#fff';
+  ctx.lineWidth   = 1.5 / vz;
+  const pts = getBoundingPoints(el);
+  pts.forEach(([wx, wy]) => {
+    const p = toCanvas(wx, wy);
+    ctx.beginPath();
+    ctx.rect(p.x - 4, p.y - 4, 8, 8);
+    ctx.fill(); ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function getBoundingPoints(el) {
+  switch (el.type) {
+    case 'rect':    return [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]];
+    case 'ellipse': return [[el.cx-el.rx,el.cy],[el.cx+el.rx,el.cy],[el.cx,el.cy-el.ry],[el.cx,el.cy+el.ry]];
+    case 'line':    return [[el.x1,el.y1],[el.x2,el.y2]];
+    case 'text': case 'marker': return [[el.x,el.y]];
+    case 'pen': case 'polygon': {
+      if (!el.points?.length) return [];
+      const xs = el.points.map(p=>p[0]), ys = el.points.map(p=>p[1]);
+      const mx=Math.min(...xs),my=Math.min(...ys),Mx=Math.max(...xs),My=Math.max(...ys);
+      return [[mx,my],[Mx,my],[mx,My],[Mx,My]];
+    }
+    default: return [];
+  }
+}
+
+function renderCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  if (vz > 0.4) {
+    const gridSize = 50 * vz;
+    const ox = ((-vx * vz) % gridSize + gridSize) % gridSize;
+    const oy = ((-vy * vz) % gridSize + gridSize) % gridSize;
+    ctx.strokeStyle = 'rgba(0,0,0,.04)';
+    ctx.lineWidth = 1;
+    for (let x = ox; x < canvas.width; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+    }
+    for (let y = oy; y < canvas.height; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+    }
+  }
+
+  if (!carte) return;
+
+  // Draw elements in layer order (bottom to top)
+  const layerOrder = carte.layers.map(l => l.id);
+  const sorted = [...carte.elements].sort((a, b) =>
+    (layerOrder.indexOf(a.layerId) - layerOrder.indexOf(b.layerId)) ||
+    (a.zIndex || 0) - (b.zIndex || 0)
+  );
+  sorted.forEach(el => drawElement(el));
+
+  // Draw in-progress polygon preview
+  if (currentTool === 'polygon' && polyPoints.length > 0) {
+    ctx.save();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth / vz;
+    ctx.setLineDash([5/vz, 5/vz]);
+    ctx.beginPath();
+    const p0 = toCanvas(polyPoints[0][0], polyPoints[0][1]);
+    ctx.moveTo(p0.x, p0.y);
+    polyPoints.forEach(([wx,wy]) => { const p = toCanvas(wx,wy); ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+    ctx.restore();
+    // points
+    polyPoints.forEach(([wx,wy]) => {
+      const p = toCanvas(wx,wy);
+      ctx.save(); ctx.fillStyle='#2563ab'; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill(); ctx.restore();
+    });
+  }
+
+  // Status
+  const status = document.getElementById('canvasStatus');
+  status.style.display = 'block';
+  status.textContent = `${Math.round(vz*100)}%  ·  ${carte.elements.length} élément${carte.elements.length!==1?'s':''}`;
+}
+
+// ── MOUSE EVENTS ──────────────────────────────────────────────
+canvas.addEventListener('mousedown', onMouseDown);
+canvas.addEventListener('mousemove', onMouseMove);
+canvas.addEventListener('mouseup',   onMouseUp);
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.1 : 0.91); }, { passive: false });
+canvas.addEventListener('dblclick', onDblClick);
+
+function getMouseWorld(e) {
+  const rect = canvas.getBoundingClientRect();
+  return toWorld(e.clientX - rect.left, e.clientY - rect.top);
+}
+
+function onMouseDown(e) {
+  if (!carte) return;
+  const w = getMouseWorld(e);
+
+  if (currentTool === 'pan') {
+    isPanning = true;
+    panStartX = e.clientX; panStartY = e.clientY;
+    panStartVX = vx; panStartVY = vy;
+    document.getElementById('canvasWrap').classList.add('panning');
+    return;
+  }
+
+  if (currentTool === 'select') {
+    // Hit test
+    const hit = hitTest(w.x, w.y);
+    if (hit) {
+      selectedId = hit.id;
+      isDragging = true;
+      dragOffX = w.x - getElCenter(hit).x;
+      dragOffY = w.y - getElCenter(hit).y;
+    } else {
+      selectedId = null;
+    }
+    renderCanvas(); renderProps();
+    return;
+  }
+
+  if (currentTool === 'polygon') {
+    polyPoints.push([w.x, w.y]);
+    renderCanvas();
+    return;
+  }
+
+  if (!currentLayerVisible()) { AC.toast('Le calque actuel est masqué.'); return; }
+
+  isDrawing = true;
+  startX = w.x; startY = w.y;
+
+  if (currentTool === 'pen') {
+    currentPath = { id: newId(), type: 'pen', layerId: currentLayerId,
+      points: [[w.x, w.y]], stroke: strokeColor, fill: fillColor, strokeWidth, opacity };
+  } else if (currentTool === 'text') {
+    isDrawing = false;
+    const txt = prompt('Texte :');
+    if (!txt) return;
+    const el = { id: newId(), type: 'text', layerId: currentLayerId,
+      x: w.x, y: w.y, text: txt, fontSize: 14,
+      fill: strokeColor, stroke: strokeColor, strokeWidth, opacity };
+    carte.elements.push(el);
+    selectedId = el.id;
+    saveAndRedraw(); renderProps();
+  } else if (currentTool === 'marker') {
+    isDrawing = false;
+    const lbl = prompt('Nom du lieu :') || '';
+    const el = { id: newId(), type: 'marker', layerId: currentLayerId,
+      x: w.x, y: w.y, label: lbl,
+      fill: fillColor || '#C17D6F', stroke: strokeColor, strokeWidth, opacity };
+    carte.elements.push(el);
+    selectedId = el.id;
+    saveAndRedraw(); renderProps();
+  }
+}
+
+function onMouseMove(e) {
+  if (isPanning) {
+    const dx = (e.clientX - panStartX) / vz;
+    const dy = (e.clientY - panStartY) / vz;
+    vx = panStartVX - dx; vy = panStartVY - dy;
+    renderCanvas(); return;
+  }
+  if (isDragging && selectedId) {
+    const w = getMouseWorld(e);
+    moveElement(selectedId, w.x - dragOffX, w.y - dragOffY);
+    renderCanvas(); return;
+  }
+  if (!isDrawing || !carte) return;
+  const w = getMouseWorld(e);
+
+  if (currentTool === 'pen' && currentPath) {
+    currentPath.points.push([w.x, w.y]);
+    renderCanvas();
+    drawElement(currentPath, true);
+    return;
+  }
+
+  // Preview for shape tools
+  renderCanvas();
+  ctx.save();
+  ctx.strokeStyle = strokeColor;
+  ctx.fillStyle = fillColor || 'transparent';
+  ctx.lineWidth = strokeWidth / vz;
+  ctx.globalAlpha = opacity;
+  ctx.setLineDash([6/vz, 4/vz]);
+
+  switch (currentTool) {
+    case 'line': {
+      const a = toCanvas(startX, startY), b = toCanvas(w.x, w.y);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); break;
+    }
+    case 'rect': {
+      const a = toCanvas(Math.min(startX,w.x), Math.min(startY,w.y));
+      const ww = Math.abs(w.x-startX)*vz, hh = Math.abs(w.y-startY)*vz;
+      if (fillColor) ctx.fillRect(a.x,a.y,ww,hh);
+      ctx.strokeRect(a.x,a.y,ww,hh); break;
+    }
+    case 'ellipse': {
+      const cx = (startX+w.x)/2, cy = (startY+w.y)/2;
+      const rx = Math.abs(w.x-startX)/2, ry = Math.abs(w.y-startY)/2;
+      const c = toCanvas(cx, cy);
+      ctx.beginPath(); ctx.ellipse(c.x,c.y,rx*vz,ry*vz,0,0,Math.PI*2);
+      if (fillColor) ctx.fill(); ctx.stroke(); break;
+    }
+  }
+  ctx.restore();
+}
+
+function onMouseUp(e) {
+  if (isPanning) {
+    isPanning = false;
+    document.getElementById('canvasWrap').classList.remove('panning');
+    return;
+  }
+  if (isDragging) { isDragging = false; saveAndRedraw(); return; }
+  if (!isDrawing || !carte) return;
+  isDrawing = false;
+
+  const w = getMouseWorld(e);
+
+  if (currentTool === 'pen' && currentPath) {
+    if (currentPath.points.length > 1) {
+      carte.elements.push(currentPath);
+      selectedId = currentPath.id;
+    }
+    currentPath = null;
+    saveAndRedraw(); renderProps(); return;
+  }
+
+  let el = null;
+  switch (currentTool) {
+    case 'line':
+      if (Math.abs(w.x-startX) > 2 || Math.abs(w.y-startY) > 2)
+        el = { id:newId(), type:'line', layerId:currentLayerId, x1:startX,y1:startY,x2:w.x,y2:w.y, stroke:strokeColor, strokeWidth, opacity };
+      break;
+    case 'rect':
+      if (Math.abs(w.x-startX) > 3 && Math.abs(w.y-startY) > 3)
+        el = { id:newId(), type:'rect', layerId:currentLayerId,
+               x:Math.min(startX,w.x), y:Math.min(startY,w.y),
+               w:Math.abs(w.x-startX), h:Math.abs(w.y-startY),
+               stroke:strokeColor, fill:fillColor, strokeWidth, opacity };
+      break;
+    case 'ellipse':
+      if (Math.abs(w.x-startX) > 3 && Math.abs(w.y-startY) > 3)
+        el = { id:newId(), type:'ellipse', layerId:currentLayerId,
+               cx:(startX+w.x)/2, cy:(startY+w.y)/2,
+               rx:Math.abs(w.x-startX)/2, ry:Math.abs(w.y-startY)/2,
+               stroke:strokeColor, fill:fillColor, strokeWidth, opacity };
+      break;
+  }
+  if (el) { carte.elements.push(el); selectedId = el.id; saveAndRedraw(); renderProps(); }
+  else renderCanvas();
+}
+
+function onDblClick(e) {
+  // Close polygon
+  if (currentTool === 'polygon' && polyPoints.length >= 3) {
+    const el = { id:newId(), type:'polygon', layerId:currentLayerId,
+      points: [...polyPoints], stroke:strokeColor, fill:fillColor, strokeWidth, opacity };
+    carte.elements.push(el);
+    selectedId = el.id;
+    polyPoints = [];
+    saveAndRedraw(); renderProps();
+  }
+}
+
+// ── HIT TEST ──────────────────────────────────────────────────
+function hitTest(wx, wy) {
+  if (!carte) return null;
+  const tol = 8 / vz;
+  // test in reverse order (top elements first)
+  const sorted = [...carte.elements].reverse();
+  for (const el of sorted) {
+    const layer = carte.layers.find(l => l.id === el.layerId);
+    if (layer && !layer.visible) continue;
+    if (hitEl(el, wx, wy, tol)) return el;
+  }
+  return null;
+}
+
+function hitEl(el, wx, wy, tol) {
+  switch(el.type) {
+    case 'rect':    return wx>=el.x-tol && wx<=el.x+el.w+tol && wy>=el.y-tol && wy<=el.y+el.h+tol;
+    case 'ellipse': return Math.pow((wx-el.cx)/el.rx,2)+Math.pow((wy-el.cy)/el.ry,2)<=1.2;
+    case 'line': {
+      const d = distToSegment(wx,wy,el.x1,el.y1,el.x2,el.y2);
+      return d < tol * 2;
+    }
+    case 'text': case 'marker': return Math.abs(wx-el.x)<30/vz && Math.abs(wy-el.y)<30/vz;
+    case 'pen': case 'polygon': {
+      if (!el.points) return false;
+      for(let i=0;i<el.points.length-1;i++) {
+        if(distToSegment(wx,wy,el.points[i][0],el.points[i][1],el.points[i+1][0],el.points[i+1][1])<tol*2) return true;
+      }
+      return false;
+    }
+  }
+  return false;
+}
+
+function distToSegment(px,py,ax,ay,bx,by) {
+  const dx=bx-ax, dy=by-ay;
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1)));
+  return Math.hypot(px-ax-t*dx, py-ay-t*dy);
+}
+
+function getElCenter(el) {
+  switch(el.type) {
+    case 'rect':    return { x: el.x + el.w/2, y: el.y + el.h/2 };
+    case 'ellipse': return { x: el.cx, y: el.cy };
+    case 'line':    return { x: (el.x1+el.x2)/2, y: (el.y1+el.y2)/2 };
+    default:        return { x: el.x || 0, y: el.y || 0 };
+  }
+}
+
+function moveElement(id, cx, cy) {
+  const el = getEl(id); if (!el) return;
+  const c = getElCenter(el);
+  const dx = cx - c.x, dy = cy - c.y;
+  switch(el.type) {
+    case 'rect':    el.x+=dx; el.y+=dy; break;
+    case 'ellipse': el.cx+=dx; el.cy+=dy; break;
+    case 'line':    el.x1+=dx; el.y1+=dy; el.x2+=dx; el.y2+=dy; break;
+    case 'text': case 'marker': el.x+=dx; el.y+=dy; break;
+    case 'pen': case 'polygon':
+      if(el.points) el.points=el.points.map(([px,py])=>[px+dx,py+dy]); break;
+  }
+}
+
+// ── PROPERTIES PANEL ──────────────────────────────────────────
+function renderProps() {
+  const el = selectedId ? getEl(selectedId) : null;
+  const panel = document.getElementById('propsContent');
+  if (!el) { panel.innerHTML = '<div class="no-sel">Sélectionnez un élément.</div>'; return; }
+
+  let extra = '';
+  if (el.type === 'text') extra = `
+    <div class="prop-row"><span class="prop-label">Texte</span><input class="prop-inp" value="${esc(el.text||'')}" oninput="setProp('text',this.value)"></div>
+    <div class="prop-row"><span class="prop-label">Taille</span><input class="prop-inp" type="number" value="${el.fontSize||14}" oninput="setProp('fontSize',+this.value)" style="width:60px"></div>`;
+  if (el.type === 'marker') extra = `
+    <div class="prop-row"><span class="prop-label">Nom</span><input class="prop-inp" value="${esc(el.label||'')}" oninput="setProp('label',this.value)"></div>`;
+
+  panel.innerHTML = `
+    <div class="prop-row"><span class="prop-label">Type</span><span style="font-size:var(--text-xs);color:var(--ink3)">${el.type}</span></div>
+    <div class="prop-row"><span class="prop-label">Trait</span><input type="color" class="prop-color" value="${el.stroke||'#1a1917'}" oninput="setProp('stroke',this.value)"></div>
+    ${el.type!=='line'?`<div class="prop-row"><span class="prop-label">Fond</span><input type="color" class="prop-color" value="${el.fill||'#ffffff'}" oninput="setProp('fill',this.value)"></div>`:''}
+    <div class="prop-row"><span class="prop-label">Épaisseur</span><input class="prop-inp" type="number" value="${el.strokeWidth||2}" min="1" max="20" oninput="setProp('strokeWidth',+this.value)" style="width:60px"></div>
+    <div class="prop-row"><span class="prop-label">Opacité</span><input class="prop-inp" type="number" value="${Math.round((el.opacity??1)*100)}" min="0" max="100" oninput="setProp('opacity',this.value/100)" style="width:60px"></div>
+    ${extra}
+    <div style="margin-top:var(--sp-4);display:flex;gap:var(--sp-2)">
+      <button class="btn btn-outline" style="font-size:var(--text-xs);flex:1" onclick="deleteSelected()">Supprimer</button>
+    </div>`;
+}
+
+function setProp(key, val) {
+  const el = selectedId ? getEl(selectedId) : null;
+  if (!el) return;
+  el[key] = val;
+  saveAndRedraw();
+}
+
+// ── DELETE / Z-ORDER ──────────────────────────────────────────
+function deleteSelected() {
+  if (!selectedId || !carte) return;
+  carte.elements = carte.elements.filter(e => e.id !== selectedId);
+  selectedId = null;
+  saveAndRedraw(); renderProps();
+}
+
+function moveLayer(dir) {
+  if (!selectedId || !carte) return;
+  const idx = carte.elements.findIndex(e => e.id === selectedId);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= carte.elements.length) return;
+  [carte.elements[idx], carte.elements[newIdx]] = [carte.elements[newIdx], carte.elements[idx]];
+  saveAndRedraw();
+}
+
+// ── SAVE ──────────────────────────────────────────────────────
+let saveTimer = null;
+async function saveAndRedraw() {
+  renderCanvas();
+  if (!carte) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    await AC.Cartes.save(carte);
+  }, 500);
+}
+
+// ── EXPORT SVG ────────────────────────────────────────────────
+function exportSVG() {
+  if (!carte) { AC.toast('Aucune carte ouverte.'); return; }
+  const W = carte.width || 1600, H = carte.height || 1200;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">\n`;
+
+  [...carte.elements].forEach(el => {
+    const layer = carte.layers.find(l => l.id === el.layerId);
+    if (layer && !layer.visible) return;
+    const op = el.opacity ?? 1;
+    const stroke = el.stroke || '#1a1917';
+    const fill = el.fill || 'none';
+    const sw = el.strokeWidth || 2;
+
+    switch(el.type) {
+      case 'rect':
+        svg += `<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>\n`; break;
+      case 'ellipse':
+        svg += `<ellipse cx="${el.cx}" cy="${el.cy}" rx="${el.rx}" ry="${el.ry}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>\n`; break;
+      case 'line':
+        svg += `<line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>\n`; break;
+      case 'pen': case 'polygon':
+        if(el.points?.length) {
+          const d = el.points.map((p,i) => `${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ') + (el.type==='polygon'?'Z':'');
+          svg += `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" opacity="${op}"/>\n`;
+        }
+        break;
+      case 'text':
+        svg += `<text x="${el.x}" y="${el.y}" fill="${el.fill||stroke}" font-family="DM Sans, sans-serif" font-size="${el.fontSize||14}" opacity="${op}">${esc(el.text||'')}</text>\n`; break;
+      case 'marker':
+        svg += `<circle cx="${el.x}" cy="${el.y - 12}" r="8" fill="${el.fill||stroke}" opacity="${op}"/>\n`;
+        svg += `<line x1="${el.x}" y1="${el.y - 4}" x2="${el.x}" y2="${el.y}" stroke="${el.fill||stroke}" stroke-width="2"/>\n`;
+        if(el.label) svg += `<text x="${el.x+11}" y="${el.y-8}" fill="#1a1917" font-family="DM Sans,sans-serif" font-size="11">${esc(el.label)}</text>\n`;
+        break;
+    }
+  });
+
+  svg += '</svg>';
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (carte.nom || 'carte') + '.svg';
+  a.click();
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  switch(e.key) {
+    case 'v': case 'V': setTool('select', document.querySelector('[data-tool=select]')); break;
+    case 'h': case 'H': setTool('pan',    document.querySelector('[data-tool=pan]'));    break;
+    case 'p': case 'P': setTool('pen',    document.querySelector('[data-tool=pen]'));    break;
+    case 'l': case 'L': setTool('line',   document.querySelector('[data-tool=line]'));   break;
+    case 'r': case 'R': setTool('rect',   document.querySelector('[data-tool=rect]'));   break;
+    case 'e': case 'E': setTool('ellipse',document.querySelector('[data-tool=ellipse]'));break;
+    case 'g': case 'G': setTool('polygon',document.querySelector('[data-tool=polygon]'));break;
+    case 't': case 'T': setTool('text',   document.querySelector('[data-tool=text]'));   break;
+    case 'm': case 'M': setTool('marker', document.querySelector('[data-tool=marker]')); break;
+    case 'Delete': case 'Backspace': deleteSelected(); break;
+    case 'Escape': polyPoints=[]; selectedId=null; renderCanvas(); renderProps(); break;
+    case '+': case '=': zoom(1.2); break;
+    case '-': zoom(0.83); break;
+    case '0': resetView(); break;
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  await loadLieux();
+  buildPresets();
+  resizeCanvas();
+  renderCanvas();
+}
+
+init();
+</script>
+</body>
+</html>

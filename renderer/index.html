@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Arcanum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column}
+
+/* STATUS BAR */
+.statusbar{height:26px;flex-shrink:0;background:var(--sf2);border-bottom:1px solid var(--ln);display:flex;align-items:center;padding:0 var(--sp-5);gap:var(--sp-4);font-size:var(--text-xs);color:var(--ink3)}
+.status-file{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-save{display:flex;align-items:center;gap:var(--sp-2)}
+.save-dot{width:6px;height:6px;border-radius:50%;background:var(--ln2);flex-shrink:0;transition:background .3s}
+.save-dot.saved{background:#7BAF7B}
+.save-dot.unsaved{background:#C4A35A}
+
+/* WELCOME SCREEN */
+.welcome-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:clamp(32px,5vh,64px) var(--sp-8)}
+.welcome-brand{font-size:clamp(28px,4vw,42px);font-weight:300;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);margin-bottom:var(--sp-3)}
+.welcome-brand em{font-style:normal;font-weight:500}
+.welcome-sub{font-size:var(--text-base);color:var(--ink3);margin-bottom:clamp(28px,4vh,48px)}
+
+.project-actions{display:flex;gap:var(--sp-4);margin-bottom:clamp(24px,4vh,40px);flex-wrap:wrap;justify-content:center}
+.proj-btn{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);padding:var(--sp-6) var(--sp-8);border:1px solid var(--ln);border-radius:var(--rl);cursor:pointer;background:var(--sf);transition:all .15s;text-decoration:none;color:inherit;min-width:140px}
+.proj-btn:hover{border-color:var(--ln2);box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.proj-btn:active{transform:scale(.98)}
+.proj-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--sf2)}
+.proj-icon svg{width:20px;height:20px;stroke:var(--ink2);fill:none;stroke-width:1.5}
+.proj-label{font-size:var(--text-sm);font-weight:500;color:var(--ink)}
+.proj-sub{font-size:var(--text-xs);color:var(--ink3);text-align:center}
+
+/* STATS */
+.stats-section{width:100%;max-width:600px;margin-bottom:clamp(20px,3vh,36px)}
+.stats-title{font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:var(--sp-4)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)}
+.stat-card{background:var(--sf);border:1px solid var(--ln);border-radius:var(--r);padding:var(--sp-4);text-align:center}
+.stat-n{font-size:var(--text-xl);font-weight:500;font-family:var(--mono);display:block;color:var(--ink)}
+.stat-l{font-size:var(--text-xs);color:var(--ink3);display:block;margin-top:2px}
+
+/* MODULES GRID */
+.modules-section{width:100%;max-width:600px}
+.modules-title{font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:var(--sp-4)}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:var(--sp-3)}
+.mod-card{background:var(--sf);border:1px solid var(--ln);border-radius:var(--rl);overflow:hidden;cursor:pointer;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.mod-card:hover{border-color:var(--ln2);box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.mod-card.disabled{opacity:.4;pointer-events:none}
+.mod-accent{height:3px}
+.mod-body{padding:var(--sp-4) var(--sp-5) var(--sp-3);flex:1}
+.mod-icon{width:28px;height:28px;border-radius:6px;border:1px solid var(--ln);background:var(--sf2);display:flex;align-items:center;justify-content:center;margin-bottom:var(--sp-3)}
+.mod-icon svg{width:14px;height:14px;stroke:var(--ink2);fill:none;stroke-width:1.5}
+.mod-title{font-size:var(--text-sm);font-weight:500;color:var(--ink)}
+.mod-desc{font-size:var(--text-xs);color:var(--ink3);line-height:1.5;margin-top:var(--sp-1)}
+.mod-foot{padding:var(--sp-2) var(--sp-5);border-top:1px solid var(--ln);font-size:var(--text-xs);color:var(--ink3);font-family:var(--mono)}
+
+/* NO PROJECT */
+.no-project{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--sp-8);gap:var(--sp-4);max-width:400px}
+.no-project-icon svg{width:48px;height:48px;stroke:var(--ln2);fill:none;stroke-width:1}
+.no-project h2{font-size:var(--text-lg);font-weight:400;color:var(--ink2)}
+.no-project p{font-size:var(--text-sm);color:var(--ink3);line-height:1.8}
+
+/* AUTOSAVE PANEL */
+.autosave-panel{position:fixed;inset:0;background:rgba(26,25,23,.4);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.asp-inner{background:var(--sf);border-radius:var(--rl);padding:var(--sp-8);max-width:440px;width:92%;max-height:80vh;overflow-y:auto}
+.asp-inner h3{font-size:var(--text-md);font-weight:500;margin-bottom:var(--sp-5)}
+.save-entry{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--ln);gap:var(--sp-4)}
+.save-entry:last-child{border-bottom:none}
+.save-time{font-size:var(--text-sm);color:var(--ink2);font-family:var(--mono)}
+.save-id{font-size:var(--text-xs);color:var(--ink3)}
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <span class="status-file" id="statusFile">Aucun projet ouvert</span>
+  <div class="status-save" id="statusSave" style="display:none">
+    <div class="save-dot" id="saveDot"></div>
+    <span id="saveLabel">—</span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="welcome-wrap" id="mainContent">
+  <!-- Rempli par JS selon l'état -->
+</div>
+
+<script src="arcanum.js"></script>
+<script>
+// ═══════════════════════════════════════════════
+// ÉTAT
+// ═══════════════════════════════════════════════
+let isProjectOpen = false;
+let lastSaved = null;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init() {
+  isProjectOpen = await ARCANUM.IO.isOpen();
+  if (isProjectOpen) {
+    const path = await ARCANUM.IO.getPath();
+    updateStatusBar(path);
+    await renderProjectOpen();
+  } else {
+    renderNoProject();
+  }
+  setupEvents();
+}
+
+// ═══════════════════════════════════════════════
+// ÉVÉNEMENTS IPC → renderer
+// ═══════════════════════════════════════════════
+function setupEvents() {
+  window.arcanum.on('app:fileOpened', async (path) => {
+    isProjectOpen = true;
+    updateStatusBar(path);
+    await renderProjectOpen();
+  });
+
+  window.arcanum.on('app:newProject', async () => {
+    isProjectOpen = true;
+    const path = await ARCANUM.IO.getPath();
+    updateStatusBar(path);
+    await renderProjectOpen();
+  });
+
+  window.arcanum.on('app:fileSaved', (path) => {
+    setSaveDot('saved', 'Enregistré');
+    lastSaved = new Date();
+  });
+
+  window.arcanum.on('app:autosaved', (time) => {
+    setSaveDot('saved', `Sauvegarde auto ${time}`);
+    setTimeout(() => setSaveDot('', ''), 4000);
+  });
+
+  window.arcanum.on('app:showAutosaves', () => showAutosavePanel());
+
+  window.arcanum.on('app:titleUpdate', ({ name }) => {
+    document.title = `Arcanum — ${name}`;
+  });
+}
+
+// ═══════════════════════════════════════════════
+// STATUS BAR
+// ═══════════════════════════════════════════════
+function updateStatusBar(filePath) {
+  const el = document.getElementById('statusFile');
+  const saveEl = document.getElementById('statusSave');
+  if (filePath) {
+    el.textContent = filePath;
+    saveEl.style.display = 'flex';
+    setSaveDot('saved', 'Prêt');
+  } else {
+    el.textContent = 'Aucun projet ouvert';
+    saveEl.style.display = 'none';
+  }
+}
+
+function setSaveDot(state, label) {
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  dot.className = 'save-dot' + (state ? ' ' + state : '');
+  lbl.textContent = label;
+}
+
+// ═══════════════════════════════════════════════
+// ÉCRANS
+// ═══════════════════════════════════════════════
+function renderNoProject() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="welcome-brand"><em>Arc</em>anum</div>
+    <div class="welcome-sub">Gestionnaire de roman — personnages, lieux, scènes, timeline</div>
+    <div class="project-actions">
+      <div class="proj-btn" onclick="ARCANUM.IO.newProject()">
+        <div class="proj-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+        <span class="proj-label">Nouveau projet</span>
+        <span class="proj-sub">Crée un fichier .arcanum</span>
+      </div>
+      <div class="proj-btn" onclick="ARCANUM.IO.openProject()">
+        <div class="proj-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+        <span class="proj-label">Ouvrir</span>
+        <span class="proj-sub">Ouvre un .arcanum existant</span>
+      </div>
+    </div>
+    <div class="no-project">
+      <div class="no-project-icon"><svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>
+      <p>Vos données sont stockées dans un fichier <strong>.arcanum</strong> sur votre disque.<br>
+      Aucune connexion réseau, aucun serveur, aucun compte.<br>
+      Sauvegardez, copiez, envoyez votre fichier librement.</p>
+    </div>`;
+}
+
+async function renderProjectOpen() {
+  // Stats
+  const [chars, lieux, scenes, chaps] = await Promise.all([
+    ARCANUM.Chars.all(),
+    ARCANUM.Lieux.all(),
+    ARCANUM.Scenes.all(),
+    ARCANUM.Chapitres.all(),
+  ]);
+  const nc = Object.keys(chars).length;
+  const nl = Object.keys(lieux).length;
+  const ns = Object.keys(scenes).length;
+  const nch = Object.keys(chaps).length;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="welcome-brand" style="font-size:clamp(18px,2.5vw,26px);margin-bottom:var(--sp-3)"><em>Arc</em>anum</div>
+
+    <div class="stats-section">
+      <div class="stats-title">Projet</div>
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-n" id="sn-chars">${nc}</span><span class="stat-l">personnages</span></div>
+        <div class="stat-card"><span class="stat-n" id="sn-lieux">${nl}</span><span class="stat-l">lieux</span></div>
+        <div class="stat-card"><span class="stat-n" id="sn-scenes">${ns}</span><span class="stat-l">scènes</span></div>
+        <div class="stat-card"><span class="stat-n" id="sn-chaps">${nch}</span><span class="stat-l">chapitres</span></div>
+      </div>
+    </div>
+
+    <div class="modules-section">
+      <div class="modules-title">Modules</div>
+      <div class="modules-grid">
+        <a href="personnages.html" class="mod-card">
+          <div class="mod-accent" style="background:#5B8DB8"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="mod-title">Personnages</div>
+            <div class="mod-desc">Fiches, traits, relations et réseau</div>
+          </div>
+          <div class="mod-foot">${nc} fiche${nc!==1?'s':''}</div>
+        </a>
+        <a href="lieux.html" class="mod-card">
+          <div class="mod-accent" style="background:#7BAF7B"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+            <div class="mod-title">Lieux</div>
+            <div class="mod-desc">Planètes, villes, vaisseaux</div>
+          </div>
+          <div class="mod-foot">${nl} lieu${nl!==1?'x':''}</div>
+        </a>
+        <a href="carte.html" class="mod-card">
+          <div class="mod-accent" style="background:#6AABAA"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
+            <div class="mod-title">Cartes</div>
+            <div class="mod-desc">Dessiner les cartes des lieux</div>
+          </div>
+          <div class="mod-foot">Éditeur vectoriel</div>
+        </a>
+        <a href="scenes.html" class="mod-card">
+          <div class="mod-accent" style="background:#9B7BB5"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="mod-title">Scènes</div>
+            <div class="mod-desc">Qui est où, quand</div>
+          </div>
+          <div class="mod-foot">${ns} scène${ns!==1?'s':''}</div>
+        </a>
+        <a href="ecriture.html" class="mod-card">
+          <div class="mod-accent" style="background:#B07850"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <div class="mod-title">Écriture</div>
+            <div class="mod-desc">Éditeur markdown lié aux scènes</div>
+          </div>
+          <div class="mod-foot" id="cnt-textes">—</div>
+        </a>
+        <a href="timeline.html" class="mod-card">
+          <div class="mod-accent" style="background:#C4A35A"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="8 8 3 12 8 16"/><polyline points="16 8 21 12 16 16"/></svg></div>
+            <div class="mod-title">Timeline & Carte</div>
+            <div class="mod-desc">Vue croisée et déplacements</div>
+          </div>
+          <div class="mod-foot">${nch} chapitre${nch!==1?'s':''}</div>
+        </a>
+        <a href="search.html" class="mod-card">
+          <div class="mod-accent" style="background:#888780"></div>
+          <div class="mod-body">
+            <div class="mod-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="mod-title">Recherche</div>
+            <div class="mod-desc">Chercher dans tout le projet</div>
+          </div>
+          <div class="mod-foot">Touche /</div>
+        </a>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// PANEL SAUVEGARDES AUTO
+// ═══════════════════════════════════════════════
+async function showAutosavePanel() {
+  const saves = await ARCANUM.AutoSave.list();
+  const panel = document.createElement('div');
+  panel.className = 'autosave-panel';
+  const rows = saves.length
+    ? saves.map(s => {
+        const d = new Date(s.created_at * 1000);
+        return `<div class="save-entry">
+          <div>
+            <div class="save-time">${d.toLocaleDateString('fr-FR')} ${d.toLocaleTimeString('fr-FR')}</div>
+            <div class="save-id">#${s.id}</div>
+          </div>
+          <button class="btn btn-outline" style="font-size:var(--text-xs)" onclick="restoreSave(${s.id},this)">Restaurer</button>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--ink3);font-size:var(--text-sm);padding:var(--sp-4) 0">Aucune sauvegarde automatique.</p>';
+
+  panel.innerHTML = `<div class="asp-inner">
+    <h3>Historique des sauvegardes</h3>
+    ${rows}
+    <div class="modal-actions" style="margin-top:var(--sp-5)">
+      <button class="btn btn-outline" onclick="this.closest('.autosave-panel').remove()">Fermer</button>
+    </div>
+  </div>`;
+  document.body.appendChild(panel);
+}
+
+async function restoreSave(id, btn) {
+  modal('Restaurer cette sauvegarde ?',
+    'Les données actuelles seront écrasées par cette version.',
+    async () => {
+      await ARCANUM.AutoSave.restore(id);
+      document.querySelector('.autosave-panel')?.remove();
+      await renderProjectOpen();
+      toast('Sauvegarde restaurée ✓');
+    }
+  );
+}
+
+// ── Raccourci / → search ──────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName) && isProjectOpen) {
+    window.location.href = 'search.html';
+  }
+});
+
+init();
+</script>
+</body>
+</html>

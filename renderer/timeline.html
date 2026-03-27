@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcanum — Carte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcanum.css">
+<style>
+html,body{height:100%;overflow:hidden}body{display:flex;flex-direction:column}
+.controls{height:44px;flex-shrink:0;display:flex;align-items:center;padding:0 var(--sp-5);border-bottom:1px solid var(--ln);background:var(--sf);gap:var(--sp-4);overflow-x:auto}
+.controls::-webkit-scrollbar{height:0}
+.ctl-lbl{font-size:var(--text-xs);color:var(--ink3);white-space:nowrap}
+.ctl-sep{width:1px;height:20px;background:var(--ln);flex-shrink:0}
+.ctl-sel{font-size:var(--text-xs);padding:4px 8px;border:1px solid var(--ln);border-radius:6px;background:transparent;color:var(--ink2);font-family:var(--sans);outline:none;cursor:pointer}
+.ctl-info{font-size:var(--text-xs);color:var(--ink3);margin-left:auto;white-space:nowrap}
+.main{flex:1;overflow:hidden;position:relative;background:var(--sf3)}
+
+/* MAP */
+.map-canvas{width:100%;height:100%;position:absolute;inset:0;overflow:hidden;cursor:grab;user-select:none}
+.map-canvas.dragging{cursor:grabbing}
+.map-inner{position:absolute;top:0;left:0;transform-origin:0 0}
+
+/* NODES */
+.node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:filter .15s}
+.node:hover{filter:brightness(.92)}
+.planet-circle{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:500;color:#fff;overflow:hidden;flex-shrink:0;border:2px solid rgba(0,0,0,.1)}
+.planet-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.city-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;border:2px solid rgba(0,0,0,.1)}
+.ship-box{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.ship-box svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.8}
+.node-label{font-size:var(--text-xs);font-weight:500;color:var(--ink);text-align:center;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(255,255,255,.8)}
+.node-sub{font-size:9px;color:var(--ink3)}
+
+/* PERSOS PRÉSENTS */
+.perso-stack{display:flex;align-items:center;margin-top:2px}
+.pav{width:22px;height:22px;border-radius:50%;border:2px solid var(--sf);overflow:hidden;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;color:var(--ink2);margin-left:-6px;flex-shrink:0}
+.pav:first-child{margin-left:0}.pav img{width:100%;height:100%;object-fit:cover}
+.pav-more{background:var(--sf2);color:var(--ink3);font-size:8px;border:2px solid var(--sf)}
+
+/* CHAP SLIDER */
+.chap-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:var(--sf);border:1px solid var(--ln);border-radius:var(--rl);padding:10px 18px;display:flex;align-items:center;gap:12px;z-index:30;box-shadow:0 2px 14px rgba(0,0,0,.08);white-space:nowrap}
+.chap-nav{width:28px;height:28px;border-radius:7px;border:1px solid var(--ln);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink2);transition:all .12s;flex-shrink:0}
+.chap-nav:hover{border-color:var(--ink);color:var(--ink)}.chap-nav svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.chap-info{text-align:center;min-width:140px}
+.chap-num-lbl{font-size:var(--text-sm);font-weight:500;color:var(--ink);display:block}
+.chap-date-lbl{font-size:var(--text-xs);color:var(--ink3)}
+.chap-progress{width:140px;accent-color:var(--ink)}
+
+/* ZOOM */
+.zoom-ctrl{position:absolute;bottom:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+.zoom-btn{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--ln2);background:var(--sf);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink2);font-size:var(--text-md);transition:all .12s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.zoom-btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* INFO PANEL */
+.info-panel{position:absolute;top:12px;right:12px;width:230px;background:var(--sf);border:1px solid var(--ln);border-radius:var(--rl);padding:14px 16px;z-index:40;box-shadow:0 2px 14px rgba(0,0,0,.08)}
+.ip-close{position:absolute;top:10px;right:12px;width:20px;height:20px;border:none;background:transparent;cursor:pointer;color:var(--ink3);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:color .1s}
+.ip-close:hover{color:var(--ink)}
+.ip-title{font-size:var(--text-sm);font-weight:500;margin-bottom:2px;padding-right:20px}
+.ip-type{font-size:var(--text-xs);color:var(--ink3);margin-bottom:10px}
+.ip-perso{display:flex;align-items:center;gap:7px;font-size:var(--text-xs);color:var(--ink2);padding:4px 0;border-bottom:1px solid var(--ln)}
+.ip-perso:last-child{border-bottom:none}
+.ip-av{width:22px;height:22px;border-radius:50%;background:var(--sf3);border:1px solid var(--ln);display:flex;align-items:center;justify-content:center;font-size:8px;overflow:hidden;flex-shrink:0}
+.ip-av img{width:100%;height:100%;object-fit:cover}
+.ip-scenes{font-size:var(--text-xs);color:var(--ink3);margin-top:8px;line-height:1.7}
+.ip-link{display:block;margin-top:8px;font-size:var(--text-xs);color:var(--ink3);text-decoration:none;border-top:1px solid var(--ln);padding-top:8px}
+.ip-link:hover{color:var(--ink)}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:var(--sp-4);color:var(--ink3);text-align:center;padding:var(--sp-8)}
+.empty-state h3{font-size:var(--text-lg);font-weight:400;color:var(--ink2)}
+.empty-state a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back-link"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Accueil</a>
+  <span class="page-title">Carte des déplacements</span>
+</div>
+<div class="controls">
+  <span class="ctl-lbl">Personnage</span>
+  <select class="ctl-sel" id="fPerso" onchange="render()"><option value="">Tous</option></select>
+  <div class="ctl-sep"></div>
+  <span class="ctl-lbl">Lieu</span>
+  <select class="ctl-sel" id="fLieu" onchange="render()"><option value="">Tous</option></select>
+  <span class="ctl-info" id="ctrlInfo"></span>
+</div>
+<div class="main" id="mainArea"></div>
+
+<script src="arcanum-client.js"></script>
+<script>
+let chapIdx=0, zoom=1, panX=0, panY=0, dragging=false, dx0=0, dy0=0;
+const W=1400, H=900;
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function isLight(hex){if(!hex||hex.length<7)return true;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(r*299+g*587+b*114)/1000>160;}
+
+async function buildControls(){
+  const chars=await AC.Chars.list();
+  const lieux=Object.values(await AC.Lieux.all());
+  const fp=document.getElementById('fPerso');
+  fp.innerHTML='<option value="">Tous</option>'+chars.map(c=>`<option value="${c.id}">${esc([c.prenom,c.nom].filter(Boolean).join(' ')||'Sans nom')}</option>`).join('');
+  const fl=document.getElementById('fLieu');
+  fl.innerHTML='<option value="">Tous</option>'+lieux.map(l=>`<option value="${l.id}">${esc(AC.Lieux.fullName(l.id))}</option>`).join('');
+}
+
+function computePositions(allLieu){
+  const pos={};
+  const planetes=Object.values(allLieu).filter(l=>l.type==='planete');
+  const vaisseaux=Object.values(allLieu).filter(l=>l.type==='vaisseau');
+  const cols=Math.ceil(Math.sqrt(planetes.length+1));
+  const cellW=(W-160)/Math.max(cols,1), cellH=(H-220)/Math.max(Math.ceil(planetes.length/cols),1);
+  planetes.forEach((p,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const x=80+col*cellW+cellW/2+(row%2?cellW*.15:0);
+    const y=80+row*cellH+cellH/2;
+    pos[p.id]={x,y};
+    const villes=Object.values(allLieu).filter(l=>l.parentId===p.id&&l.type==='ville');
+    villes.forEach((v,j)=>{
+      const angle=(j/Math.max(villes.length,1))*Math.PI*2-(Math.PI/2);
+      const r=70+villes.length*10;
+      pos[v.id]={x:x+r*Math.cos(angle), y:y+r*Math.sin(angle)};
+    });
+  });
+  vaisseaux.forEach((v,i)=>{
+    const sp=(W-160)/Math.max(vaisseaux.length,1);
+    pos[v.id]={x:80+i*sp+sp/2, y:H-80};
+  });
+  return pos;
+}
+
+async function render(){
+  const chaps=await AC.Chapitres.list();
+  const allLieu=await AC.Lieux.all();
+  const scenes=Object.values(await AC.Scenes.all());
+  if(!chaps.length||!scenes.length){
+    document.getElementById('mainArea').innerHTML=`<div class="empty-state"><h3>Aucune scène</h3><p>Créez des scènes dans <a href="scenes.html">Scènes</a><br>pour visualiser les déplacements.</p></div>`;
+    document.getElementById('ctrlInfo').textContent='';return;
+  }
+  if(chapIdx>=chaps.length)chapIdx=chaps.length-1;
+  const chap=chaps[chapIdx];
+  const fPerso=document.getElementById('fPerso').value;
+  const fLieu=document.getElementById('fLieu').value;
+  document.getElementById('ctrlInfo').textContent=scenes.length+' scène'+(scenes.length>1?'s':'')+' · '+chaps.length+' chapitre'+(chaps.length>1?'s':'');
+  AC.resetColorCache();
+  const matrix=AC.Scenes.matrice();
+  const chapRow=matrix[chap.id]||{};
+  const charsByLieu={};
+  Object.entries(chapRow).forEach(([cid,lid])=>{
+    if(fPerso&&cid!==fPerso)return;
+    if(fLieu&&lid!==fLieu)return;
+    if(!charsByLieu[lid])charsByLieu[lid]=[];
+    charsByLieu[lid].push(cid);
+  });
+  const pos=computePositions(allLieu);
+  let nodesHtml='';
+  Object.values(allLieu).forEach(lieu=>{
+    const p=pos[lieu.id];if(!p)return;
+    const col=AC.lieuColor(lieu.id);
+    const chars=charsByLieu[lieu.id]||[];
+    const initTxt=(lieu.nom||'?').slice(0,2).toUpperCase();
+    let circle='';
+    if(lieu.type==='planete'){
+      circle=`<div class="planet-circle" style="width:56px;height:56px;background:${col}">${lieu.image?`<img src="${lieu.image}" alt="">`:initTxt}</div>`;}
+    else if(lieu.type==='ville'){
+      circle=`<div class="city-circle" style="background:${col}">${initTxt}</div>`;}
+    else{
+      circle=`<div class="ship-box" style="background:${col}"><svg viewBox="0 0 24 24"><path d="M12 2L2 19h20L12 2z"/></svg></div>`;}
+    const pavs=chars.slice(0,5).map(cid=>{
+      const c=AC.Chars.get(cid);
+      return c&&c.image?`<div class="pav"><img src="${c.image}" alt=""></div>`:`<div class="pav">${AC.Chars.initials(cid)}</div>`;
+    }).join('')+(chars.length>5?`<div class="pav pav-more">+${chars.length-5}</div>`:'');
+    const stack=chars.length?`<div class="perso-stack">${pavs}</div>`:'';
+    const hasScenes=scenes.some(s=>s.lieuId===lieu.id&&s.chapitreId===chap.id);
+    const opacity=hasScenes||chars.length?'1':'.25';
+    nodesHtml+=`<div class="node" style="left:${p.x}px;top:${p.y}px;opacity:${opacity}" onclick="showInfo('${lieu.id}','${chap.id}')">${circle}<div class="node-label">${esc(lieu.nom||'')}</div>${chars.length?`<div class="node-sub">${chars.length} perso${chars.length>1?'s':''}</div>`:''}${stack}</div>`;
+  });
+  document.getElementById('mainArea').innerHTML=`
+    <div class="map-canvas" id="mapCanvas">
+      <div class="map-inner" id="mapInner" style="width:${W}px;height:${H}px;transform:translate(${panX}px,${panY}px) scale(${zoom})">${nodesHtml}</div>
+    </div>
+    <div class="chap-bar">
+      <button class="chap-nav" onclick="goChap(${Math.max(0,chapIdx-1)})"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="chap-info">
+        <input class="chap-progress" type="range" min="0" max="${chaps.length-1}" value="${chapIdx}" oninput="goChap(+this.value)">
+        <span class="chap-num-lbl">Ch.${chap.numero} — ${esc(chap.titre||'Sans titre')}</span>
+        ${chap.dateFiction?`<span class="chap-date-lbl">${esc(chap.dateFiction)}</span>`:''}
+      </div>
+      <button class="chap-nav" onclick="goChap(${Math.min(chaps.length-1,chapIdx+1)})"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="zoom-ctrl">
+      <div class="zoom-btn" onclick="doZoom(1.2)">+</div>
+      <div class="zoom-btn" onclick="doZoom(.83)">−</div>
+      <div class="zoom-btn" onclick="resetView()" style="font-size:var(--text-xs)">⊙</div>
+    </div>
+    <div id="infoPanel" style="display:none"></div>`;
+  initDrag();
+}
+
+async function showInfo(lieuId, chapId){
+  const panel=document.getElementById('infoPanel');if(!panel)return;
+  const lieu=AC.Lieux.get(lieuId);if(!lieu)return;
+  const matrix=AC.Scenes.matrice();
+  const chapRow=matrix[chapId]||{};
+  const charIds=Object.entries(chapRow).filter(([,lid])=>lid===lieuId).map(([cid])=>cid);
+  const scenesHere=AC.Scenes.byChap(chapId).filter(s=>s.lieuId===lieuId);
+  const typeLabel={planete:'Planète',ville:'Ville',vaisseau:'Vaisseau'}[lieu.type]||lieu.type;
+  const persoRows=charIds.map(cid=>{
+    const c=AC.Chars.get(cid);
+    const av=c&&c.image?`<div class="ip-av"><img src="${c.image}" alt=""></div>`:`<div class="ip-av">${AC.Chars.initials(cid)}</div>`;
+    return`<div class="ip-perso">${av}${esc(AC.Chars.name(cid))}</div>`;
+  }).join('')||`<div style="font-size:var(--text-xs);color:var(--ink3);padding:4px 0">Personne à ce chapitre.</div>`;
+  const sceneNames=scenesHere.map(s=>s.titre||'Scène sans titre').join(', ');
+  panel.style.display='block';
+  panel.innerHTML=`<div class="info-panel">
+    <button class="ip-close" onclick="document.getElementById('infoPanel').style.display='none'">×</button>
+    <div class="ip-title">${esc(lieu.nom||'Lieu')}</div>
+    <div class="ip-type">${typeLabel}${lieu.description?' · '+lieu.description.slice(0,50):''}</div>
+    ${persoRows}
+    ${sceneNames?`<div class="ip-scenes">Scènes : ${esc(sceneNames)}</div>`:''}
+    <a class="ip-link" href="lieux.html">Ouvrir la fiche →</a>
+  </div>`;
+}
+
+function goChap(i){chapIdx=i;document.getElementById('infoPanel').style.display='none';render();}
+
+function initDrag(){
+  const canvas=document.getElementById('mapCanvas');if(!canvas)return;
+  canvas.onmousedown=e=>{if(e.target.closest('.node,.chap-bar,.zoom-ctrl,.info-panel'))return;dragging=true;dx0=e.clientX-panX;dy0=e.clientY-panY;canvas.classList.add('dragging');};
+  window.onmousemove=e=>{if(!dragging)return;panX=e.clientX-dx0;panY=e.clientY-dy0;applyT();};
+  window.onmouseup=()=>{dragging=false;const c=document.getElementById('mapCanvas');if(c)c.classList.remove('dragging');};
+  canvas.onwheel=e=>{e.preventDefault();doZoom(e.deltaY<0?1.1:.91,e.clientX,e.clientY);};
+}
+function applyT(){const inner=document.getElementById('mapInner');if(inner)inner.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;}
+function doZoom(f,cx,cy){
+  const canvas=document.getElementById('mapCanvas');if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const px=(cx??rect.width/2)-rect.left, py=(cy??rect.height/2)-rect.top;
+  panX=px-(px-panX)*f;panY=py-(py-panY)*f;
+  zoom=Math.max(.15,Math.min(4,zoom*f));applyT();
+}
+function resetView(){
+  const canvas=document.getElementById('mapCanvas');if(!canvas)return;
+  const r=canvas.getBoundingClientRect();
+  zoom=Math.min(r.width/W,r.height/H)*.9;
+  panX=(r.width-W*zoom)/2;panY=(r.height-H*zoom)/2;applyT();
+}
+async function init(){
+  await AC.loadAll();
+  await buildControls();
+  await render();
+  setTimeout(resetView,100);
+}
+init();
+</script>
+</body>
+</html>
