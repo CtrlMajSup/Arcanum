@@ -1,0 +1,135 @@
+#include "PlacePickerDialog.h"
+
+#include <QTimer>
+#include <QHBoxLayout>
+
+namespace CF::UI {
+
+PlacePickerDialog::PlacePickerDialog(
+    std::shared_ptr<Services::PlaceService> placeService,
+    QWidget* parent)
+    : QDialog(parent)
+    , m_placeService(std::move(placeService))
+{
+    setWindowTitle("Choose a place");
+    setFixedSize(400, 480);
+    setModal(true);
+    setupUi();
+    setupConnections();
+    loadPlaces();
+}
+
+std::optional<Domain::PlaceId> PlacePickerDialog::selectedPlaceId() const
+{
+    return m_selectedId;
+}
+
+void PlacePickerDialog::setupUi()
+{
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(16, 16, 16, 16);
+    root->setSpacing(10);
+
+    root->addWidget(new QLabel("Select the destination place:", this));
+
+    m_searchEdit = new QLineEdit(this);
+    m_searchEdit->setPlaceholderText("Filter places…");
+    m_searchEdit->setClearButtonEnabled(true);
+    root->addWidget(m_searchEdit);
+
+    m_list = new QListWidget(this);
+    m_list->setObjectName("characterList");
+    root->addWidget(m_list, 1);
+
+    auto* btnRow = new QHBoxLayout();
+    m_cancelBtn  = new QPushButton("Cancel", this);
+    m_okBtn      = new QPushButton("Select", this);
+    m_okBtn->setObjectName("primaryButton");
+    m_okBtn->setEnabled(false);
+    m_okBtn->setDefault(true);
+    btnRow->addStretch();
+    btnRow->addWidget(m_cancelBtn);
+    btnRow->addWidget(m_okBtn);
+    root->addLayout(btnRow);
+}
+
+void PlacePickerDialog::setupConnections()
+{
+    // Debounce search
+    auto* timer = new QTimer(this);
+    timer->setSingleShot(true);
+    timer->setInterval(250);
+    connect(m_searchEdit, &QLineEdit::textChanged,
+            timer, qOverload<>(&QTimer::start));
+    connect(timer, &QTimer::timeout, this, [this]() {
+        onSearchChanged(m_searchEdit->text());
+    });
+
+    connect(m_list, &QListWidget::itemSelectionChanged,
+            this, [this]() {
+                m_okBtn->setEnabled(m_list->currentItem() != nullptr);
+            });
+
+    connect(m_list, &QListWidget::itemDoubleClicked,
+            this, &PlacePickerDialog::onItemDoubleClicked);
+
+    connect(m_okBtn,     &QPushButton::clicked,
+            this, &PlacePickerDialog::onAcceptClicked);
+    connect(m_cancelBtn, &QPushButton::clicked,
+            this, &QDialog::reject);
+}
+
+void PlacePickerDialog::loadPlaces(const QString& filter)
+{
+    auto result = filter.isEmpty()
+        ? m_placeService->getAll()
+        : m_placeService->search(filter.toStdString());
+
+    if (result.isErr()) return;
+
+    m_list->clear();
+    for (const auto& place : result.value()) {
+        auto* item = new QListWidgetItem(m_list);
+
+        // Build display: "Name  [Region]  [Type]"
+        QString display = QString::fromStdString(place.name);
+        if (!place.region.empty()) {
+            display += QString("  ·  %1")
+                .arg(QString::fromStdString(place.region));
+        }
+        item->setText(display);
+        item->setData(Qt::UserRole,
+                      static_cast<qlonglong>(place.id.value()));
+
+        // Add type badge as decoration
+        const QString typeStr = QString::fromStdString(place.type);
+        item->setToolTip(QString("Type: %1\nRegion: %2%3")
+            .arg(typeStr)
+            .arg(QString::fromStdString(place.region))
+            .arg(place.isMobile ? "\n(Mobile)" : ""));
+
+        m_list->addItem(item);
+    }
+}
+
+void PlacePickerDialog::onSearchChanged(const QString& text)
+{
+    loadPlaces(text);
+}
+
+void PlacePickerDialog::onItemDoubleClicked(QListWidgetItem*)
+{
+    onAcceptClicked();
+}
+
+void PlacePickerDialog::onAcceptClicked()
+{
+    const auto* item = m_list->currentItem();
+    if (!item) return;
+
+    m_selectedId = Domain::PlaceId(
+        item->data(Qt::UserRole).toLongLong());
+    accept();
+}
+
+} // namespace CF::UI

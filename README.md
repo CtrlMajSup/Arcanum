@@ -1,92 +1,58 @@
-# Arcanum — Gestionnaire de roman
+# 🖋️ Arcanum : Architecture Technique
 
-Application desktop locale pour gérer personnages, lieux, scènes, timeline et cartes de votre roman.
+Bienvenue dans le cœur de **Arcanum**. Ce projet utilise une **Architecture Propre (Clean Architecture)** adaptée au C++20 et Qt6. L'objectif est de séparer strictement la logique métier (ton univers, tes personnages) des détails techniques (la base de données SQLite, l'interface graphique).
 
-## Installation
+---
 
-### Prérequis
-- Node.js 18+ : https://nodejs.org
-- Git (optionnel)
+## 🏗️ Structure des Dossiers
 
-### Démarrage
+### 1. `src/core/` (Noyau Technique)
+C'est le socle technique du projet. On y trouve les outils transversaux qui ne concernent pas le métier mais le fonctionnement de l'application.
+* **Result.h** : Gestion des erreurs sans exceptions (`Result<T, E>`).
+* **Logger.h** : Système de log centralisé.
+* **Assert.h** : Macros de validation pour le mode debug.
 
-```bash
-# 1. Aller dans le dossier du projet
-cd arcanum-app
+### 2. `src/domain/` (Cœur Métier - Pur C++)
+**C'est la partie la plus importante.** Elle ne doit dépendre de rien (ni Qt, ni SQLite). Si on change de framework UI, ce dossier ne bouge pas, ça c'est plus pour me chalenger
+* **entities/** : Les objets principaux (Personnage, Lieu, Scène).
+* **valueobjects/** : Des types simples mais typés (ID unique, format de date fictive, c'est surtout pour la logique des nouvveaux format de date en fait).
+* **events/** : Système de notifications internes quand une donnée change.
 
-# 2. Installer les dépendances (une seule fois)
-npm install
+### 3. `src/repositories/` (Interfaces de Données)
+Ce dossier contient uniquement des **classes abstraites** (interfaces). Elles définissent *ce que l'on peut faire* avec les données (ex: `ICharacterRepository::save()`), sans dire *comment* (SQL, JSON, Cloud).
 
-# 3. Lancer l'application
-npm start
-```
+### 4. `src/infrastructure/` (Détails Techniques)
+C'est ici que l'on implémente les interfaces du dessus.
+* **database/** : Gestion de la connexion SQLite et des migrations (mise à jour du schéma de la base).
+* **repositories/** : Code SQL concret pour transformer des lignes de base de données en objets C++.
 
-### Première utilisation
+### 5. `src/services/` (Logique de Contrôle)
+Les services orchestrent le travail. Ils font le pont entre les dépôts (repositories) et l'UI. 
+* *Exemple* : `CharacterService` vérifie si un nom de personnage est unique avant de demander au repository de l'enregistrer.
 
-Au lancement, cliquez **Nouveau projet** et choisissez où enregistrer votre fichier `.arcanum`.
+### 6. `src/ui/` (Interface Utilisateur - Qt6)
+La couche de présentation.
+* **viewmodels/** : Adaptent les données brutes du domaine pour les rendre affichables par Qt (gestion des `QString`, signaux et slots).
+* **widgets/** : Composants graphiques personnalisés (Timeline peinte à la main, éditeurs).
 
-Ce fichier est une base de données SQLite — vous pouvez le copier, sauvegarder sur une clé USB, ou l'envoyer à quelqu'un d'autre.
+---
 
-## Fichiers `.arcanum`
+## 🛠️ Flux de Données (Data Flow)
 
-- **Extension** : `.arcanum`
-- **Format** : SQLite (lisible avec DB Browser for SQLite)
-- **Sauvegarde auto** : toutes les 2 minutes dans le fichier ouvert
-- **Historique** : 20 dernières sauvegardes automatiques conservées (Menu Fichier > Historique)
+Pour maintenir un code propre, nous suivons une direction unique :
 
-## Raccourcis clavier
+1.  **L'utilisateur** clique sur "Enregistrer" dans un `Widget`.
+2.  Le `Widget` appelle une méthode du `ViewModel`.
+3.  Le `ViewModel` invoque un `Service`.
+4.  Le `Service` valide la logique et appelle le `Repository` (Interface).
+5.  L'implémentation dans `Infrastructure` exécute la requête **SQL**.
 
-| Touche | Action |
-|--------|--------|
-| `Ctrl+N` | Nouveau projet |
-| `Ctrl+O` | Ouvrir un projet |
-| `Ctrl+S` | Enregistrer |
-| `Ctrl+Shift+S` | Enregistrer sous |
-| `/` | Recherche globale |
+---
 
-### Éditeur de cartes
-| Touche | Outil |
-|--------|-------|
-| `V` | Sélection |
-| `H` | Déplacer la vue |
-| `P` | Tracé libre |
-| `L` | Ligne |
-| `R` | Rectangle |
-| `E` | Ellipse |
-| `G` | Polygone (double-clic pour fermer) |
-| `T` | Texte |
-| `M` | Marqueur de lieu |
-| `Suppr` | Supprimer la sélection |
-| `Échap` | Annuler l'outil en cours |
-| `+` / `-` | Zoom |
-| `0` | Vue par défaut |
+## 🚀 Principes Clés
 
-## Distribution
+* **Pas d'Exceptions** : On utilise le type `Result` pour forcer la gestion des erreurs proprement.
+* **Zéro Logique dans l'UI** : Un widget ne doit jamais savoir qu'une base de données existe. Il ne connaît que son ViewModel.
+* **Injection de Dépendances** : Les objets sont créés dans `App.cpp` et passés aux autres par référence/pointeur pour faciliter les tests unitaires.
 
-Pour créer un installeur Linux :
-
-```bash
-npm run build:linux
-# → dist/Arcanum-1.0.0.AppImage
-# → dist/arcanum_1.0.0_amd64.deb
-```
-
-## Structure du projet
-
-```
-arcanum-app/
-  main.js        ← Processus principal Electron
-  preload.js     ← Pont IPC sécurisé
-  db.js          ← Couche SQLite (better-sqlite3)
-  package.json
-  renderer/
-    arcanum.js   ← API renderer
-    arcanum.css  ← Design system partagé
-    index.html   ← Hub principal
-    personnages.html
-    lieux.html
-    scenes.html
-    timeline.html
-    search.html
-    carte.html   ← Éditeur de cartes vectoriel
-```
+---

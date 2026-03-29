@@ -1,0 +1,135 @@
+#include "FactionPickerDialog.h"
+
+#include <QTimer>
+#include <QHBoxLayout>
+#include <QLabel>
+
+namespace CF::UI {
+
+FactionPickerDialog::FactionPickerDialog(
+    std::shared_ptr<Services::FactionService> factionService,
+    QWidget* parent)
+    : QDialog(parent)
+    , m_factionService(std::move(factionService))
+{
+    setWindowTitle("Choose a faction");
+    setFixedSize(400, 440);
+    setModal(true);
+    setupUi();
+    setupConnections();
+    loadFactions();
+}
+
+std::optional<Domain::FactionId> FactionPickerDialog::selectedFactionId() const
+{
+    return m_selectedId;
+}
+
+void FactionPickerDialog::setupUi()
+{
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(16, 16, 16, 16);
+    root->setSpacing(10);
+
+    root->addWidget(new QLabel("Select a faction to join:", this));
+
+    m_searchEdit = new QLineEdit(this);
+    m_searchEdit->setPlaceholderText("Filter factions…");
+    m_searchEdit->setClearButtonEnabled(true);
+    root->addWidget(m_searchEdit);
+
+    m_list = new QListWidget(this);
+    m_list->setObjectName("characterList");
+    root->addWidget(m_list, 1);
+
+    auto* btnRow = new QHBoxLayout();
+    m_cancelBtn  = new QPushButton("Cancel", this);
+    m_okBtn      = new QPushButton("Select", this);
+    m_okBtn->setObjectName("primaryButton");
+    m_okBtn->setEnabled(false);
+    m_okBtn->setDefault(true);
+    btnRow->addStretch();
+    btnRow->addWidget(m_cancelBtn);
+    btnRow->addWidget(m_okBtn);
+    root->addLayout(btnRow);
+}
+
+void FactionPickerDialog::setupConnections()
+{
+    auto* timer = new QTimer(this);
+    timer->setSingleShot(true);
+    timer->setInterval(250);
+    connect(m_searchEdit, &QLineEdit::textChanged,
+            timer, qOverload<>(&QTimer::start));
+    connect(timer, &QTimer::timeout, this, [this]() {
+        onSearchChanged(m_searchEdit->text());
+    });
+
+    connect(m_list, &QListWidget::itemSelectionChanged,
+            this, [this]() {
+                m_okBtn->setEnabled(m_list->currentItem() != nullptr);
+            });
+
+    connect(m_list, &QListWidget::itemDoubleClicked,
+            this, &FactionPickerDialog::onItemDoubleClicked);
+
+    connect(m_okBtn,     &QPushButton::clicked,
+            this, &FactionPickerDialog::onAcceptClicked);
+    connect(m_cancelBtn, &QPushButton::clicked,
+            this, &QDialog::reject);
+}
+
+void FactionPickerDialog::loadFactions(const QString& filter)
+{
+    auto result = filter.isEmpty()
+        ? m_factionService->getAll()
+        : m_factionService->search(filter.toStdString());
+
+    if (result.isErr()) return;
+
+    m_list->clear();
+    for (const auto& faction : result.value()) {
+        auto* item = new QListWidgetItem(m_list);
+
+        QString display = QString::fromStdString(faction.name);
+        if (!faction.type.empty()) {
+            display += QString("  ·  %1")
+                .arg(QString::fromStdString(faction.type));
+        }
+        if (faction.dissolved.has_value()) {
+            display += "  [Dissolved]";
+        }
+
+        item->setText(display);
+        item->setData(Qt::UserRole,
+                      static_cast<qlonglong>(faction.id.value()));
+        item->setToolTip(QString::fromStdString(faction.description));
+
+        if (faction.dissolved.has_value()) {
+            item->setForeground(QColor("#6c7086"));
+        }
+        m_list->addItem(item);
+    }
+}
+
+void FactionPickerDialog::onSearchChanged(const QString& text)
+{
+    loadFactions(text);
+}
+
+void FactionPickerDialog::onItemDoubleClicked(QListWidgetItem*)
+{
+    onAcceptClicked();
+}
+
+void FactionPickerDialog::onAcceptClicked()
+{
+    const auto* item = m_list->currentItem();
+    if (!item) return;
+
+    m_selectedId = Domain::FactionId(
+        item->data(Qt::UserRole).toLongLong());
+    accept();
+}
+
+} // namespace CF::UI
