@@ -23,6 +23,8 @@
 #include "ui/viewmodels/MapViewModel.h"
 #include "ui/viewmodels/ChapterViewModel.h"
 #include "ui/viewmodels/SearchViewModel.h"
+#include "ui/viewmodels/PlaceViewModel.h"
+#include "ui/viewmodels/FactionViewModel.h"
 
 // Widgets
 #include "ui/widgets/characters/CharacterListWidget.h"
@@ -32,6 +34,10 @@
 #include "ui/widgets/chapters/ChapterListWidget.h"
 #include "ui/widgets/chapters/ChapterEditorWidget.h"
 #include "ui/widgets/search/SearchWidget.h"
+#include "ui/widgets/places/PlaceListWidget.h"
+#include "ui/widgets/places/PlaceEditorWidget.h"
+#include "ui/widgets/factions/FactionListWidget.h"
+#include "ui/widgets/factions/FactionEditorWidget.h"
 
 // Setttings
 #include "ui/dialogs/NewProjectDialog.h"
@@ -66,6 +72,8 @@ private slots:
     void showMapPanel();
     void showChaptersPanel();
     void showSearchPanel();
+    void showPlacesPanel();
+    void showFactionsPanel();
 
     // Settings
     void onSettingsRequested();
@@ -73,6 +81,14 @@ private slots:
     // Character panel slots
     void onCharacterSelected(Domain::CharacterId id);
     void onCreateCharacterRequested();
+
+    // Place panel slots
+    void onPlaceSelected(Domain::PlaceId id);
+    void onCreatePlaceRequested();
+
+    // Faction panel slots
+    void onFactionSelected(Domain::FactionId id);
+    void onCreateFactionRequested();
 
     // Search navigation slots
     void onNavigateToCharacter(qint64 id);
@@ -102,6 +118,8 @@ private:
     std::shared_ptr<MapViewModel>       m_mapViewModel;
     std::shared_ptr<ChapterViewModel>   m_chapterViewModel;
     std::shared_ptr<SearchViewModel>    m_searchViewModel;
+    std::shared_ptr<PlaceViewModel>     m_placeViewModel;
+    std::shared_ptr<FactionViewModel>   m_factionViewModel;
 
     // ── Layout ────────────────────────────────────────────────────────────────
     QStackedWidget* m_panels = nullptr;
@@ -110,6 +128,16 @@ private:
     QSplitter*            m_charactersSplitter = nullptr;
     CharacterListWidget*  m_characterList      = nullptr;
     CharacterEditorWidget* m_characterEditor   = nullptr;
+
+    // Place panel: QSplitter → list | editor
+    PlaceListWidget*    m_placeList     = nullptr;
+    PlaceEditorWidget*  m_placeEditor   = nullptr;
+    QSplitter*          m_placeSplitter = nullptr;
+
+    // Faction panel: QSplitter → list | editor
+    FactionListWidget*  m_factionList     = nullptr;
+    FactionEditorWidget* m_factionEditor  = nullptr;
+    QSplitter*          m_factionSplitter = nullptr;
 
     // Timeline panel
     TimelineWidget* m_timelineWidget = nullptr;
@@ -131,6 +159,8 @@ private:
     QAction* m_actMap        = nullptr;
     QAction* m_actChapters   = nullptr;
     QAction* m_actSearch     = nullptr;
+    QAction* m_actPlaces     = nullptr;
+    QAction* m_actFactions   = nullptr;
 
     Core::Logger& m_logger;
 };

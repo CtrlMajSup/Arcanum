@@ -31,7 +31,7 @@ MainWindow::MainWindow(
                     timelineService, searchService,
                     chapterService, autoCompleteService);
 
-    setWindowTitle("ChronicleForge");
+    setWindowTitle("Arcanum");
     setMinimumSize(1100, 700);
     resize(1440, 860);
 
@@ -73,6 +73,13 @@ void MainWindow::buildViewModels(
 
     m_searchViewModel = std::make_shared<SearchViewModel>(
         searchService, m_logger, this);
+
+    m_placeViewModel  = std::make_shared<PlaceViewModel>(
+        placeService, m_logger, this);
+
+    m_factionViewModel = std::make_shared<FactionViewModel>(
+        factionService, m_logger, this);
+
 }
 
 // ── setupToolBar ──────────────────────────────────────────────────────────────
@@ -93,6 +100,8 @@ void MainWindow::setupToolBar()
     };
 
     m_actCharacters = makeNavAction("👤", "Characters");
+    m_actPlaces = makeNavAction("🏛", "Places");
+    m_actFactions = makeNavAction("⚔", "Factions");
     m_actTimeline   = makeNavAction("📅", "Timeline");
     m_actMap        = makeNavAction("🗺", "Map");
     m_actChapters   = makeNavAction("📝", "Writing");
@@ -101,6 +110,8 @@ void MainWindow::setupToolBar()
     m_actSearch = makeNavAction("🔍", "Search");
 
     connect(m_actCharacters, &QAction::triggered, this, &MainWindow::showCharactersPanel);
+    connect(m_actPlaces, &QAction::triggered, this, &MainWindow::showPlacesPanel);
+    connect(m_actFactions, &QAction::triggered, this, &MainWindow::showFactionsPanel);
     connect(m_actTimeline,   &QAction::triggered, this, &MainWindow::showTimelinePanel);
     connect(m_actMap,        &QAction::triggered, this, &MainWindow::showMapPanel);
     connect(m_actChapters,   &QAction::triggered, this, &MainWindow::showChaptersPanel);
@@ -135,6 +146,28 @@ void MainWindow::setupCentralWidget()
     m_charactersSplitter->setStretchFactor(0, 0);
     m_charactersSplitter->setStretchFactor(1, 1);
 
+    // ── Places panel ──────────────────────────────────────────────────────────────
+    m_placeSplitter   = new QSplitter(Qt::Horizontal, m_panels);
+    m_placeList       = new PlaceListWidget(m_placeViewModel, m_placeSplitter);
+    m_placeList->setMinimumWidth(220);
+    m_placeList->setMaximumWidth(320);
+    m_placeEditor     = new PlaceEditorWidget(m_placeViewModel, m_placeSplitter);
+    m_placeSplitter->addWidget(m_placeList);
+    m_placeSplitter->addWidget(m_placeEditor);
+    m_placeSplitter->setStretchFactor(0, 0);
+    m_placeSplitter->setStretchFactor(1, 1);
+
+    // ── Factions panel ────────────────────────────────────────────────────────────
+    m_factionSplitter  = new QSplitter(Qt::Horizontal, m_panels);
+    m_factionList      = new FactionListWidget(m_factionViewModel, m_factionSplitter);
+    m_factionList->setMinimumWidth(220);
+    m_factionList->setMaximumWidth(320);
+    m_factionEditor    = new FactionEditorWidget(m_factionViewModel, m_factionSplitter);
+    m_factionSplitter->addWidget(m_factionList);
+    m_factionSplitter->addWidget(m_factionEditor);
+    m_factionSplitter->setStretchFactor(0, 0);
+    m_factionSplitter->setStretchFactor(1, 1);
+
     // ── Timeline panel ────────────────────────────────────────────────────────
     m_timelineWidget = new TimelineWidget(m_timelineViewModel, m_panels);
 
@@ -159,6 +192,8 @@ void MainWindow::setupCentralWidget()
 
     // Register all panels
     m_panels->addWidget(m_charactersSplitter);
+    m_panels->addWidget(m_factionSplitter);
+    m_panels->addWidget(m_placeSplitter);
     m_panels->addWidget(m_timelineWidget);
     m_panels->addWidget(m_mapWidget);
     m_panels->addWidget(m_chaptersSplitter);
@@ -190,6 +225,33 @@ void MainWindow::setupPanelConnections()
             this, [this](CharacterId id) {
                 statusBar()->showMessage(
                     QString("Saved character #%1").arg(id.value()), 3000);
+            });
+
+
+    // ── Places panel ──────────────────────────────────────────────────────────────
+    connect(m_placeList,   &PlaceListWidget::placeSelected,
+            this, &MainWindow::onPlaceSelected);
+
+    connect(m_placeList,   &PlaceListWidget::createRequested,
+            this, &MainWindow::onCreatePlaceRequested);
+
+    connect(m_placeEditor, &PlaceEditorWidget::placeSaved,
+            this, [this](Domain::PlaceId id) {
+                statusBar()->showMessage(
+                    QString("Place #%1 saved").arg(id.value()), 3000);
+            });
+
+    // ── Factions panel ────────────────────────────────────────────────────────────
+    connect(m_factionList,   &FactionListWidget::factionSelected,
+            this, &MainWindow::onFactionSelected);
+
+    connect(m_factionList,   &FactionListWidget::createRequested,
+            this, &MainWindow::onCreateFactionRequested);
+
+    connect(m_factionEditor, &FactionEditorWidget::factionSaved,
+            this, [this](Domain::FactionId id) {
+                statusBar()->showMessage(
+                    QString("Faction #%1 saved").arg(id.value()), 3000);
             });
 
     // ── Map panel ─────────────────────────────────────────────────────────────
@@ -247,7 +309,7 @@ void MainWindow::showCharactersPanel()
 
     // Update toolbar checked state
     for (auto* act : { m_actCharacters, m_actTimeline,
-                       m_actMap, m_actChapters, m_actSearch })
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions, m_actPlaces })
         act->setChecked(false);
     m_actCharacters->setChecked(true);
 }
@@ -258,7 +320,7 @@ void MainWindow::showTimelinePanel()
     m_timelineWidget->activate();
 
     for (auto* act : { m_actCharacters, m_actTimeline,
-                       m_actMap, m_actChapters, m_actSearch })
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions, m_actPlaces })
         act->setChecked(false);
     m_actTimeline->setChecked(true);
 }
@@ -269,7 +331,7 @@ void MainWindow::showMapPanel()
     m_mapWidget->activate();
 
     for (auto* act : { m_actCharacters, m_actTimeline,
-                       m_actMap, m_actChapters, m_actSearch })
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions, m_actPlaces })
         act->setChecked(false);
     m_actMap->setChecked(true);
 }
@@ -283,7 +345,7 @@ void MainWindow::showChaptersPanel()
     m_chapterList->refresh();
 
     for (auto* act : { m_actCharacters, m_actTimeline,
-                       m_actMap, m_actChapters, m_actSearch })
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions, m_actPlaces })
         act->setChecked(false);
     m_actChapters->setChecked(true);
 }
@@ -294,7 +356,7 @@ void MainWindow::showSearchPanel()
     m_searchWidget->activate();
 
     for (auto* act : { m_actCharacters, m_actTimeline,
-                       m_actMap, m_actChapters, m_actSearch })
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions, m_actPlaces })
         act->setChecked(false);
     m_actSearch->setChecked(true);
 }
@@ -324,6 +386,63 @@ void MainWindow::onSettingsRequested()
         m_logger.info("Settings updated", "MainWindow");
         statusBar()->showMessage("Settings applied", 2000);
     }
+}
+
+void MainWindow::showPlacesPanel()
+{
+    m_panels->setCurrentWidget(m_placeSplitter);
+
+    m_placeList->refresh();
+    for (auto* act : { m_actCharacters, m_actTimeline,
+                       m_actMap, m_actChapters, m_actSearch, m_actFactions })
+        act->setChecked(false);
+    m_actPlaces->setChecked(true);
+
+}
+
+void MainWindow::showFactionsPanel()
+{
+    m_panels->setCurrentWidget(m_factionSplitter);
+    m_factionList->refresh();
+    for (auto* act : { m_actCharacters, m_actTimeline,
+                    m_actMap, m_actChapters, m_actSearch, m_actPlaces })
+    act->setChecked(false);
+    m_actFactions->setChecked(true);
+
+}
+
+void MainWindow::onPlaceSelected(Domain::PlaceId id)
+{
+    m_placeEditor->loadPlace(id);
+    statusBar()->showMessage(
+        QString("Editing place #%1").arg(id.value()), 2000);
+}
+
+void MainWindow::onCreatePlaceRequested()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(
+        this, "New Place", "Place name:", QLineEdit::Normal, "", &ok);
+    if (!ok || name.trimmed().isEmpty()) return;
+    m_placeViewModel->createPlace(name.trimmed(), "Place", "", false);
+    statusBar()->showMessage("Place created: " + name, 3000);
+}
+
+void MainWindow::onFactionSelected(Domain::FactionId id)
+{
+    m_factionEditor->loadFaction(id);
+    statusBar()->showMessage(
+        QString("Editing faction #%1").arg(id.value()), 2000);
+}
+
+void MainWindow::onCreateFactionRequested()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(
+        this, "New Faction", "Faction name:", QLineEdit::Normal, "", &ok);
+    if (!ok || name.trimmed().isEmpty()) return;
+    m_factionViewModel->createFaction(name.trimmed(), "Faction", 1, 1);
+    statusBar()->showMessage("Faction created: " + name, 3000);
 }
 
 // ── Character slot implementations ───────────────────────────────────────────
@@ -372,13 +491,10 @@ void MainWindow::onNavigateToPlace(qint64 id)
 
 void MainWindow::onNavigateToFaction(qint64 id)
 {
-    // Factions don't have their own panel yet —
-    // show on the map (where faction nodes will eventually live)
-    // For now: show a status message and open characters filtered by faction
-    showCharactersPanel();
+    showFactionsPanel();
+    m_factionEditor->loadFaction(Domain::FactionId(id));
     statusBar()->showMessage(
-        QString("Faction #%1 — filter characters by faction coming soon").arg(id),
-        4000);
+        QString("Navigated to faction #%1").arg(id), 3000);
 }
 
 void MainWindow::onNavigateToChapter(qint64 id)
