@@ -54,6 +54,8 @@ public:
 
 signals:
     void characterSaved(Domain::CharacterId id);
+    void navigateToCharacter(Domain::CharacterId id);  // NEW
+    void navigateToPlace(Domain::PlaceId id);          // NEW
 
 private slots:
     void onSaveClicked();

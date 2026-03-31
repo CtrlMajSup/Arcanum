@@ -322,8 +322,7 @@ Result<void> CharacterService::leaveFaction(
 }
 
 // ── setRelationship ───────────────────────────────────────────────────────────
-
-Result<void> CharacterService::setRelationship(
+Core::Result<void> CharacterService::setRelationship(
     CharacterId ownerId, const Relationship& relationship)
 {
     if (!relationship.targetId.isValid()) {
@@ -332,7 +331,8 @@ Result<void> CharacterService::setRelationship(
     }
     if (ownerId == relationship.targetId) {
         return Result<void>::err(
-            AppError::validation("A character cannot have a relationship with itself"));
+            AppError::validation(
+                "A character cannot have a relationship with itself"));
     }
     if (!m_characterRepo->exists(relationship.targetId)) {
         return Result<void>::err(
@@ -340,29 +340,82 @@ Result<void> CharacterService::setRelationship(
                                + relationship.targetId.toString()));
     }
 
+    // ── Forward direction: owner → target ─────────────────────────────────────
     auto result = m_characterRepo->saveRelationship(ownerId, relationship);
-    if (result.isOk()) {
-        notifyChange(DomainEvent::Kind::EntityUpdated,
-                     DomainEvent::EntityType::Character,
-                     ownerId.value(),
-                     "Relationship updated");
+    if (result.isErr()) return result;
+
+    // ── Reverse direction: target → owner (reciprocal type) ───────────────────
+    Relationship reverse;
+    reverse.targetId = ownerId;                              // points back
+    reverse.type     = reciprocalType(relationship.type);   // inverted type
+    reverse.since    = relationship.since;
+    reverse.until    = relationship.until;
+    reverse.note     = relationship.note;
+
+    auto reverseResult = m_characterRepo->saveRelationship(
+        relationship.targetId, reverse);
+    if (reverseResult.isErr()) {
+        // Non-fatal: log but don't fail the whole operation
+        m_logger.warning(
+            "Failed to save reverse relationship: "
+            + reverseResult.error().message, "CharacterService");
     }
-    return result;
+
+    notifyChange(DomainEvent::Kind::EntityUpdated,
+                 DomainEvent::EntityType::Character,
+                 ownerId.value(), "Relationship updated");
+
+    // Also notify the target character so its ViewModel refreshes
+    notifyChange(DomainEvent::Kind::EntityUpdated,
+                 DomainEvent::EntityType::Character,
+                 relationship.targetId.value(),
+                 "Reverse relationship updated");
+
+    return Result<void>::ok();
 }
 
 // ── removeRelationship ────────────────────────────────────────────────────────
 
-Result<void> CharacterService::removeRelationship(
+Core::Result<void> CharacterService::removeRelationship(
     CharacterId ownerId, CharacterId targetId)
 {
+    // Remove forward direction
     auto result = m_characterRepo->removeRelationship(ownerId, targetId);
-    if (result.isOk()) {
-        notifyChange(DomainEvent::Kind::EntityUpdated,
-                     DomainEvent::EntityType::Character,
-                     ownerId.value(),
-                     "Relationship removed");
+    if (result.isErr()) return result;
+
+    // Remove reverse direction (target → owner)
+    auto reverseResult = m_characterRepo->removeRelationship(targetId, ownerId);
+    if (reverseResult.isErr()) {
+        m_logger.warning(
+            "Failed to remove reverse relationship: "
+            + reverseResult.error().message, "CharacterService");
     }
-    return result;
+
+    notifyChange(DomainEvent::Kind::EntityUpdated,
+                 DomainEvent::EntityType::Character,
+                 ownerId.value(), "Relationship removed");
+
+    notifyChange(DomainEvent::Kind::EntityUpdated,
+                 DomainEvent::EntityType::Character,
+                 targetId.value(), "Reverse relationship removed");
+
+    return Result<void>::ok();
+}
+
+Relationship::Type CharacterService::reciprocalType(Relationship::Type type)
+{
+    using T = Relationship::Type;
+    switch (type) {
+        case T::Mentor:   return T::Student;   // Kael mentors Sira → Sira is student of Kael
+        case T::Student:  return T::Mentor;    // symmetric inverse
+        case T::Ally:     return T::Ally;      // symmetric
+        case T::Enemy:    return T::Enemy;     // symmetric
+        case T::Family:   return T::Family;    // symmetric
+        case T::Romantic: return T::Romantic;  // symmetric
+        case T::Neutral:  return T::Neutral;   // symmetric
+        case T::Unknown:  return T::Unknown;
+    }
+    return T::Unknown;
 }
 
 // ── setOnChangeCallback ───────────────────────────────────────────────────────

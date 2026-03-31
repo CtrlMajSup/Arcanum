@@ -154,7 +154,12 @@ void MainWindow::setupCentralWidget()
     m_placeList       = new PlaceListWidget(m_placeViewModel, m_placeSplitter);
     m_placeList->setMinimumWidth(220);
     m_placeList->setMaximumWidth(320);
-    m_placeEditor     = new PlaceEditorWidget(m_placeViewModel, m_placeSplitter);
+
+    m_placeEditor = new PlaceEditorWidget(
+                m_placeViewModel,
+                m_characterViewModel,   // NEW
+                m_placeSplitter);
+
     m_placeSplitter->addWidget(m_placeList);
     m_placeSplitter->addWidget(m_placeEditor);
     m_placeSplitter->setStretchFactor(0, 0);
@@ -230,6 +235,9 @@ void MainWindow::setupPanelConnections()
                     QString("Saved character #%1").arg(id.value()), 3000);
             });
 
+    // rejoindre un perso depuis la relation avec un autre
+    connect(m_characterEditor, &CharacterEditorWidget::navigateToCharacter,
+            this, &MainWindow::onCharacterSelected);
 
     // ── Places panel ──────────────────────────────────────────────────────────────
     connect(m_placeList,   &PlaceListWidget::placeSelected,
@@ -242,6 +250,18 @@ void MainWindow::setupPanelConnections()
             this, [this](Domain::PlaceId id) {
                 statusBar()->showMessage(
                     QString("Place #%1 saved").arg(id.value()), 3000);
+            });
+
+    connect(m_characterEditor, &CharacterEditorWidget::navigateToPlace,
+            this, [this](Domain::PlaceId id) {
+                showPlacesPanel();
+                onPlaceSelected(id);
+            });
+
+    connect(m_placeEditor, &PlaceEditorWidget::navigateToCharacter,
+            this, [this](Domain::CharacterId id) {
+                showCharactersPanel();
+                onCharacterSelected(id);
             });
 
     // ── Factions panel ────────────────────────────────────────────────────────────

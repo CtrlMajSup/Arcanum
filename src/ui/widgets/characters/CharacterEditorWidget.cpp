@@ -352,25 +352,63 @@ void CharacterEditorWidget::populateEvolutionsTable(const Character& c)
     }
 }
 
+// Le tableau des location dans charactere
 void CharacterEditorWidget::populateLocationsTable(const Character& c)
 {
+    // 6 columns: Place Name | From | To | Status | Note | [Open]
+    m_locationsTable->setColumnCount(6);
+    m_locationsTable->setHorizontalHeaderLabels(
+        {"Place", "From", "To", "Status", "Note", ""});
+    m_locationsTable->horizontalHeader()->setStretchLastSection(false);
+    m_locationsTable->horizontalHeader()
+        ->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_locationsTable->horizontalHeader()
+        ->setSectionResizeMode(4, QHeaderView::Stretch);
+    m_locationsTable->horizontalHeader()
+        ->setSectionResizeMode(5, QHeaderView::Fixed);
+    m_locationsTable->setColumnWidth(5, 60);
+
     m_locationsTable->setRowCount(0);
+
     for (const auto& stint : c.locationHistory) {
         const int row = m_locationsTable->rowCount();
         m_locationsTable->insertRow(row);
+
+        // ── Resolve place name from PlaceViewModel cache ───────────────────
+        const auto place = m_placeViewModel->placeById(stint.placeId);
+        const QString placeName = place.has_value()
+            ? QString::fromStdString(place->name)
+            : QString("ID %1").arg(stint.placeId.value());
+
         m_locationsTable->setItem(row, 0,
-            new QTableWidgetItem(QString::number(stint.placeId.value())));
+            new QTableWidgetItem(placeName));
         m_locationsTable->setItem(row, 1,
-            new QTableWidgetItem(QString::number(stint.from.era)));
+            new QTableWidgetItem(
+                QString::fromStdString(stint.from.display())));
         m_locationsTable->setItem(row, 2,
-            new QTableWidgetItem(QString::number(stint.from.year)));
+            new QTableWidgetItem(
+                stint.to.has_value()
+                ? QString::fromStdString(stint.to->display())
+                : "—"));
         m_locationsTable->setItem(row, 3,
-            new QTableWidgetItem(stint.isCurrent()
-                ? "Current"
-                : (stint.to ? QString("Era %1, Y%2")
-                    .arg(stint.to->era).arg(stint.to->year) : "-")));
+            new QTableWidgetItem(
+                stint.isCurrent() ? "Current" : "Past"));
+        m_locationsTable->item(row, 3)->setForeground(
+            stint.isCurrent() ? QColor("#a6e3a1") : QColor("#6c7086"));
         m_locationsTable->setItem(row, 4,
-            new QTableWidgetItem(QString::fromStdString(stint.note)));
+            new QTableWidgetItem(
+                QString::fromStdString(stint.note)));
+
+        // ── "Open" button navigates to the place panel ─────────────────────
+        auto* openBtn = new QPushButton("Open →", m_locationsTable);
+        openBtn->setObjectName("timelineBtn");
+        openBtn->setFixedHeight(24);
+        const Domain::PlaceId placeId = stint.placeId;
+        connect(openBtn, &QPushButton::clicked,
+                this, [this, placeId]() {
+                    emit navigateToPlace(placeId);
+                });
+        m_locationsTable->setCellWidget(row, 5, openBtn);
     }
 }
 
@@ -395,19 +433,52 @@ void CharacterEditorWidget::populateFactionsTable(const Character& c)
 
 void CharacterEditorWidget::populateRelationsTable(const Character& c)
 {
+    // Change table to 5 columns: Target Name | Type | Since | Note | [Open]
+    m_relationsTable->setColumnCount(5);
+    m_relationsTable->setHorizontalHeaderLabels(
+        {"Character", "Type", "Since", "Note", ""});
+    m_relationsTable->horizontalHeader()->setStretchLastSection(false);
+    m_relationsTable->horizontalHeader()
+        ->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_relationsTable->horizontalHeader()
+        ->setSectionResizeMode(4, QHeaderView::Fixed);
+    m_relationsTable->setColumnWidth(4, 60);
+
     m_relationsTable->setRowCount(0);
+
     for (const auto& rel : c.relationships) {
         const int row = m_relationsTable->rowCount();
         m_relationsTable->insertRow(row);
+
+        // ── Resolve name from ViewModel cache ──────────────────────────────
+        const auto target = m_viewModel->characterById(rel.targetId);
+        const QString targetName = target.has_value()
+            ? QString::fromStdString(target->name)
+            : QString("ID %1").arg(rel.targetId.value());
+
         m_relationsTable->setItem(row, 0,
-            new QTableWidgetItem(QString::number(rel.targetId.value())));
+            new QTableWidgetItem(targetName));
         m_relationsTable->setItem(row, 1,
-            new QTableWidgetItem(QString::fromStdString(
-                Relationship::typeToString(rel.type))));
+            new QTableWidgetItem(
+                QString::fromStdString(
+                    Relationship::typeToString(rel.type))));
         m_relationsTable->setItem(row, 2,
-            new QTableWidgetItem(QString::fromStdString(rel.since.display())));
+            new QTableWidgetItem(
+                QString::fromStdString(rel.since.display())));
         m_relationsTable->setItem(row, 3,
-            new QTableWidgetItem(QString::fromStdString(rel.note)));
+            new QTableWidgetItem(
+                QString::fromStdString(rel.note)));
+
+        // ── "Open" button navigates to the target character ────────────────
+        auto* openBtn = new QPushButton("Open →", m_relationsTable);
+        openBtn->setObjectName("timelineBtn");
+        openBtn->setFixedHeight(24);
+        const Domain::CharacterId targetId = rel.targetId;
+        connect(openBtn, &QPushButton::clicked,
+                this, [this, targetId]() {
+                    emit navigateToCharacter(targetId);
+                });
+        m_relationsTable->setCellWidget(row, 4, openBtn);
     }
 }
 

@@ -115,6 +115,8 @@ public:
 
 private:
     [[nodiscard]] Core::Result<void> validateCharacter(const Domain::Character& c) const;
+    [[nodiscard]] static Domain::Relationship::Type
+    reciprocalType(Domain::Relationship::Type type);
 
     void emitTimelineEvent(Domain::TimelineEvent::EventType type,
                            Domain::TimelineEvent::Subject   subject,

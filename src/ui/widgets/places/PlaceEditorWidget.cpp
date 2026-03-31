@@ -14,11 +14,15 @@ using namespace CF::Domain;
 using namespace CF::Core;
 
 PlaceEditorWidget::PlaceEditorWidget(
-    std::shared_ptr<PlaceViewModel> viewModel, QWidget* parent)
+    std::shared_ptr<PlaceViewModel>     placeViewModel,
+    std::shared_ptr<CharacterViewModel> characterViewModel,
+    QWidget* parent)
     : QWidget(parent)
-    , m_viewModel(std::move(viewModel))
+    , m_viewModel(std::move(placeViewModel))
+    , m_characterViewModel(std::move(characterViewModel))
 {
-    CF_REQUIRE(m_viewModel != nullptr, "PlaceViewModel must not be null");
+    CF_REQUIRE(m_viewModel           != nullptr, "PlaceViewModel must not be null");
+    CF_REQUIRE(m_characterViewModel  != nullptr, "CharacterViewModel must not be null");
     setupUi();
     setupConnections();
     clearEditor();
@@ -30,6 +34,7 @@ void PlaceEditorWidget::loadPlace(PlaceId id)
     if (!place.has_value()) return;
     m_currentPlace = place;
     populateFromPlace(*m_currentPlace);
+    populateCharactersTable(id);   // NEW
     setEnabled(true);
 }
 
@@ -52,6 +57,7 @@ void PlaceEditorWidget::setupUi()
     auto* tabs = new QTabWidget(this);
     setupIdentityTab(tabs);
     setupEvolutionsTab(tabs);
+    setupCharactersTab(tabs);   // NEW
     root->addWidget(tabs, 1);
 }
 
@@ -141,6 +147,44 @@ void PlaceEditorWidget::setupEvolutionsTab(QTabWidget* tabs)
     tabs->addTab(widget, "Timeline");
 }
 
+void PlaceEditorWidget::setupCharactersTab(QTabWidget* tabs)
+{
+    auto* widget = new QWidget();
+    auto* layout = new QVBoxLayout(widget);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(6);
+
+    auto* label = new QLabel(
+        "Characters currently located here:", widget);
+    label->setObjectName("countLabel");
+    layout->addWidget(label);
+
+    // 3 columns: Name | Species | [Open]
+    m_charactersTable = new QTableWidget(0, 3, widget);
+    m_charactersTable->setHorizontalHeaderLabels({"Name", "Species", ""});
+    m_charactersTable->horizontalHeader()->setStretchLastSection(false);
+    m_charactersTable->horizontalHeader()
+        ->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_charactersTable->horizontalHeader()
+        ->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_charactersTable->horizontalHeader()
+        ->setSectionResizeMode(2, QHeaderView::Fixed);
+    m_charactersTable->setColumnWidth(2, 60);
+    m_charactersTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_charactersTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    layout->addWidget(m_charactersTable, 1);
+
+    auto* refreshBtn = new QPushButton("Refresh", widget);
+    refreshBtn->setObjectName("timelineBtn");
+    connect(refreshBtn, &QPushButton::clicked, this, [this]() {
+        if (m_currentPlace.has_value())
+            populateCharactersTable(m_currentPlace->id);
+    });
+    layout->addWidget(refreshBtn);
+
+    tabs->addTab(widget, "Characters");
+}
+
 void PlaceEditorWidget::setupConnections()
 {
     connect(m_saveButton,     &QPushButton::clicked,
@@ -183,6 +227,64 @@ void PlaceEditorWidget::populateEvolutionsTable(const Place& p)
             new QTableWidgetItem(QString::fromStdString(evo.description)));
     }
 }
+
+void PlaceEditorWidget::populateCharactersTable(Domain::PlaceId placeId)
+{
+    m_charactersTable->setRowCount(0);
+
+    // Iterate all characters in the ViewModel cache
+    // and find those whose current location is this place
+    const int count = m_characterViewModel->rowCount();
+    for (int i = 0; i < count; ++i) {
+        const auto character = m_characterViewModel->characterAt(i);
+        if (!character.has_value()) continue;
+
+        // Check if character is currently at this place
+        bool isHere = false;
+        for (const auto& stint : character->locationHistory) {
+            if (stint.placeId == placeId && stint.isCurrent()) {
+                isHere = true;
+                break;
+            }
+        }
+        if (!isHere) continue;
+
+        const int row = m_charactersTable->rowCount();
+        m_charactersTable->insertRow(row);
+
+        m_charactersTable->setItem(row, 0,
+            new QTableWidgetItem(
+                QString::fromStdString(character->name)));
+        m_charactersTable->setItem(row, 1,
+            new QTableWidgetItem(
+                QString::fromStdString(character->species)));
+
+        // "Open →" navigates to character editor
+        auto* openBtn = new QPushButton("Open →", m_charactersTable);
+        openBtn->setObjectName("timelineBtn");
+        openBtn->setFixedHeight(24);
+        const Domain::CharacterId charId = character->id;
+        connect(openBtn, &QPushButton::clicked,
+                this, [this, charId]() {
+                    emit navigateToCharacter(charId);
+                });
+        m_charactersTable->setCellWidget(row, 2, openBtn);
+    }
+
+    // Update tab label with count
+    // (parent tab widget accessed via parentWidget chain)
+    const int found = m_charactersTable->rowCount();
+    if (auto* tabs = qobject_cast<QTabWidget*>(
+            m_charactersTable->parentWidget()
+                             ->parentWidget()
+                             ->parentWidget())) {
+        tabs->setTabText(2,
+            found > 0
+            ? QString("Characters (%1)").arg(found)
+            : "Characters");
+    }
+}
+
 
 void PlaceEditorWidget::onSaveClicked()
 {
