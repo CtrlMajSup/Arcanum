@@ -7,14 +7,14 @@
 namespace CF::UI {
 
 CharacterPickerDialog::CharacterPickerDialog(
-    std::shared_ptr<Services::CharacterService> characterService,
+    std::shared_ptr<CharacterViewModel> characterViewModel,
     Domain::CharacterId excludeId,
     QWidget* parent)
     : QDialog(parent)
-    , m_characterService(std::move(characterService))
+    , m_characterViewModel(std::move(characterViewModel))
     , m_excludeId(excludeId)
 {
-    setWindowTitle("Choose a character");
+    setWindowTitle("Choisir un personnage");
     setFixedSize(400, 440);
     setModal(true);
     setupUi();
@@ -84,42 +84,46 @@ void CharacterPickerDialog::setupConnections()
 
 void CharacterPickerDialog::loadCharacters(const QString& filter)
 {
-    auto result = filter.isEmpty()
-        ? m_characterService->getAll()
-        : m_characterService->search(filter.toStdString());
-
-    if (result.isErr()) return;
-
     m_list->clear();
-    for (const auto& character : result.value()) {
-        // Exclude the owner character
-        if (character.id == m_excludeId) continue;
+
+    const int count = m_characterViewModel->rowCount();
+    for (int i = 0; i < count; ++i) {
+        const auto character = m_characterViewModel->characterAt(i);
+        if (!character.has_value()) continue;
+
+        // Exclure le personnage propriétaire de la relation
+        if (character->id == m_excludeId) continue;
+
+        const QString name = QString::fromStdString(character->name);
+
+        if (!filter.isEmpty() &&
+            !name.contains(filter, Qt::CaseInsensitive)) continue;
 
         auto* item = new QListWidgetItem(m_list);
 
-        QString display = QString::fromStdString(character.name);
-        if (!character.species.empty()) {
-            display += QString("  ·  %1")
-                .arg(QString::fromStdString(character.species));
+        QString display = name;
+        if (!character->species.empty()) {
+            display += "  ·  " + QString::fromStdString(character->species);
         }
-        if (!character.isAlive()) {
-            display += "  [Deceased]";
+        if (!character->isAlive()) {
+            display += "  [Décédé]";
         }
 
         item->setText(display);
         item->setData(Qt::UserRole,
-                      static_cast<qlonglong>(character.id.value()));
+                      static_cast<qlonglong>(character->id.value()));
         item->setToolTip(
-            QString("Born: %1%2")
-            .arg(QString::fromStdString(character.born.display()))
-            .arg(!character.isAlive()
-                 ? "\nDeceased: "
-                   + QString::fromStdString(character.died->display())
+            QString("Né : %1%2")
+            .arg(QString::fromStdString(character->born.display()))
+            .arg(!character->isAlive()
+                 ? "\nDécédé : " +
+                   QString::fromStdString(character->died->display())
                  : ""));
 
-        if (!character.isAlive()) {
+        if (!character->isAlive()) {
             item->setForeground(QColor("#6c7086"));
         }
+
         m_list->addItem(item);
     }
 }

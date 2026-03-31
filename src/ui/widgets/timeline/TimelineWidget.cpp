@@ -51,8 +51,9 @@ void TimelineWidget::setupUi()
     root->setSpacing(0);
 
     setupToolbar(root);
-    setupCanvas();
-    root->addWidget(m_canvas, 1);
+    //setupCanvas();
+    //root->addWidget(m_canvas, 1);
+    root->addStretch(1);
     setupScrollBar(root);
 }
 

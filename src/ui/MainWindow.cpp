@@ -139,7 +139,10 @@ void MainWindow::setupCentralWidget()
 
 
     m_characterEditor = new CharacterEditorWidget(
-        m_characterViewModel, m_charactersSplitter);
+        m_characterViewModel,
+        m_placeViewModel,      // déjà construit juste avant
+        m_factionViewModel,    // déjà construit juste avant
+        m_charactersSplitter);
 
     m_charactersSplitter->addWidget(m_characterList);
     m_charactersSplitter->addWidget(m_characterEditor);

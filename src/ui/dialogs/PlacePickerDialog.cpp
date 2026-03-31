@@ -5,13 +5,14 @@
 
 namespace CF::UI {
 
+
 PlacePickerDialog::PlacePickerDialog(
-    std::shared_ptr<Services::PlaceService> placeService,
+    std::shared_ptr<PlaceViewModel> placeViewModel,
     QWidget* parent)
     : QDialog(parent)
-    , m_placeService(std::move(placeService))
+    , m_placeViewModel(std::move(placeViewModel))
 {
-    setWindowTitle("Choose a place");
+    setWindowTitle("Choisir un lieu");
     setFixedSize(400, 480);
     setModal(true);
     setupUi();
@@ -81,32 +82,37 @@ void PlacePickerDialog::setupConnections()
 
 void PlacePickerDialog::loadPlaces(const QString& filter)
 {
-    auto result = filter.isEmpty()
-        ? m_placeService->getAll()
-        : m_placeService->search(filter.toStdString());
-
-    if (result.isErr()) return;
-
     m_list->clear();
-    for (const auto& place : result.value()) {
+
+    // Itère directement le cache du ViewModel — aucun appel DB
+    const int count = m_placeViewModel->rowCount();
+    for (int i = 0; i < count; ++i) {
+        const auto place = m_placeViewModel->placeAt(i);
+        if (!place.has_value()) continue;
+
+        const QString name = QString::fromStdString(place->name);
+
+        // Filtre côté client sur le cache
+        if (!filter.isEmpty() &&
+            !name.contains(filter, Qt::CaseInsensitive)) continue;
+
         auto* item = new QListWidgetItem(m_list);
 
-        // Build display: "Name  [Region]  [Type]"
-        QString display = QString::fromStdString(place.name);
-        if (!place.region.empty()) {
-            display += QString("  ·  %1")
-                .arg(QString::fromStdString(place.region));
+        QString display = name;
+        if (!place->region.empty()) {
+            display += "  ·  " + QString::fromStdString(place->region);
         }
+        if (place->isMobile) {
+            display += "  [Mobile]";
+        }
+
         item->setText(display);
         item->setData(Qt::UserRole,
-                      static_cast<qlonglong>(place.id.value()));
-
-        // Add type badge as decoration
-        const QString typeStr = QString::fromStdString(place.type);
-        item->setToolTip(QString("Type: %1\nRegion: %2%3")
-            .arg(typeStr)
-            .arg(QString::fromStdString(place.region))
-            .arg(place.isMobile ? "\n(Mobile)" : ""));
+                      static_cast<qlonglong>(place->id.value()));
+        item->setToolTip(
+            QString("Type: %1\nRégion: %2")
+            .arg(QString::fromStdString(place->type))
+            .arg(QString::fromStdString(place->region)));
 
         m_list->addItem(item);
     }

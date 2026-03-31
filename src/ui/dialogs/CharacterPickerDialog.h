@@ -10,6 +10,7 @@
 
 #include "services/CharacterService.h"
 #include "domain/entities/Character.h"
+#include "ui/viewmodels/CharacterViewModel.h"
 
 namespace CF::UI {
 
@@ -23,7 +24,7 @@ class CharacterPickerDialog : public QDialog {
 
 public:
     explicit CharacterPickerDialog(
-        std::shared_ptr<Services::CharacterService> characterService,
+        std::shared_ptr<CharacterViewModel> characterViewModel,
         Domain::CharacterId excludeId,
         QWidget* parent = nullptr);
 
@@ -42,6 +43,7 @@ private:
     std::shared_ptr<Services::CharacterService> m_characterService;
     Domain::CharacterId                          m_excludeId;
     std::optional<Domain::CharacterId>           m_selectedId;
+    std::shared_ptr<CharacterViewModel> m_characterViewModel;
 
     QLineEdit*   m_searchEdit = nullptr;
     QListWidget* m_list       = nullptr;

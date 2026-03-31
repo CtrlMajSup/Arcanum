@@ -16,11 +16,21 @@ namespace CF::UI {
 using namespace CF::Domain;
 using namespace CF::Core;
 
+
 CharacterEditorWidget::CharacterEditorWidget(
-    std::shared_ptr<CharacterViewModel> viewModel, QWidget* parent)
+    std::shared_ptr<CharacterViewModel> viewModel,
+    std::shared_ptr<PlaceViewModel>     placeViewModel,
+    std::shared_ptr<FactionViewModel>   factionViewModel,
+    QWidget* parent)
     : QWidget(parent)
     , m_viewModel(std::move(viewModel))
+    , m_placeViewModel(std::move(placeViewModel))
+    , m_factionViewModel(std::move(factionViewModel))
 {
+    CF_REQUIRE(m_viewModel      != nullptr, "CharacterViewModel must not be null");
+    CF_REQUIRE(m_placeViewModel != nullptr, "PlaceViewModel must not be null");
+    CF_REQUIRE(m_factionViewModel != nullptr, "FactionViewModel must not be null");
+
     setupUi();
     setupConnections();
     clearEditor();
@@ -444,20 +454,48 @@ void CharacterEditorWidget::onAddLocationClicked()
 {
     if (!m_currentCharacter.has_value()) return;
 
-    // In a full implementation this would open a place picker dialog
-    // For now we just show a placeholder
-    QMessageBox::information(this, "Move character",
-        "Place picker dialog will be shown here.\n"
-        "Connect to PlaceService to list available places.");
+    // Ouvre le picker en lui passant le PlaceViewModel
+    // Le dialog itère le cache du ViewModel — pas d'appel direct au service
+    PlacePickerDialog dlg(m_placeViewModel, this);
+
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    const auto placeId = dlg.selectedPlaceId();
+    if (!placeId.has_value()) return;
+
+    // Les spinboxes era/year de l'onglet Locations donnent le moment du déplacement
+    m_viewModel->moveCharacter(
+        m_currentCharacter->id,
+        *placeId,
+        m_locEraBox->value(),
+        m_locYearBox->value(),
+        m_locNoteEdit->text().trimmed()
+    );
+
+    m_locNoteEdit->clear();
 }
 
 void CharacterEditorWidget::onAddFactionClicked()
 {
     if (!m_currentCharacter.has_value()) return;
 
-    QMessageBox::information(this, "Join faction",
-        "Faction picker dialog will be shown here.\n"
-        "Connect to FactionService to list available factions.");
+    // Ouvre le picker en lui passant le FactionViewModel
+    FactionPickerDialog dlg(m_factionViewModel, this);
+
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    const auto factionId = dlg.selectedFactionId();
+    if (!factionId.has_value()) return;
+
+    m_viewModel->joinFaction(
+        m_currentCharacter->id,
+        *factionId,
+        m_facEraBox->value(),
+        m_facYearBox->value(),
+        m_facRoleEdit->text().trimmed()
+    );
+
+    m_facRoleEdit->clear();
 }
 
 void CharacterEditorWidget::onLeaveFactiomClicked()
@@ -485,22 +523,26 @@ void CharacterEditorWidget::onAddRelationshipClicked()
 {
     if (!m_currentCharacter.has_value()) return;
 
-    bool ok = false;
-    const int64_t targetId = m_relTargetEdit->text().toLongLong(&ok);
-    if (!ok || targetId <= 0) {
-        QMessageBox::warning(this, "Validation", "Enter a valid target character ID.");
-        return;
-    }
+    // Ouvre le picker en lui passant le CharacterViewModel
+    // On exclut le personnage courant de la liste
+    CharacterPickerDialog dlg(
+        m_viewModel,
+        m_currentCharacter->id,
+        this);
 
-    Relationship rel;
-    rel.targetId = CharacterId(targetId);
-    rel.type     = Relationship::typeFromString(
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    const auto targetId = dlg.selectedCharacterId();
+    if (!targetId.has_value()) return;
+
+    Domain::Relationship rel;
+    rel.targetId = *targetId;
+    rel.type     = Domain::Relationship::typeFromString(
                        m_relTypeCombo->currentText().toStdString());
     rel.since    = { m_relEraBox->value(), m_relYearBox->value() };
     rel.note     = m_relNoteEdit->text().toStdString();
 
     m_viewModel->setRelationship(m_currentCharacter->id, rel);
-    m_relTargetEdit->clear();
     m_relNoteEdit->clear();
 }
 

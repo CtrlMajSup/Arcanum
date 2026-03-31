@@ -16,6 +16,8 @@
 #include <memory>
 
 #include "ui/viewmodels/CharacterViewModel.h"
+#include "ui/viewmodels/PlaceViewModel.h"
+#include "ui/viewmodels/FactionViewModel.h"
 #include "domain/entities/Character.h"
 
 namespace CF::UI {
@@ -40,6 +42,8 @@ class CharacterEditorWidget : public QWidget {
 public:
     explicit CharacterEditorWidget(
         std::shared_ptr<CharacterViewModel> viewModel,
+        std::shared_ptr<PlaceViewModel>     placeViewModel,
+        std::shared_ptr<FactionViewModel>   factionViewModel,
         QWidget* parent = nullptr);
 
     // Load a character into the editor — called when list selection changes
@@ -79,6 +83,8 @@ private:
     [[nodiscard]] Domain::Character buildCharacterFromForm() const;
 
     std::shared_ptr<CharacterViewModel>  m_viewModel;
+    std::shared_ptr<PlaceViewModel>     m_placeViewModel;
+    std::shared_ptr<FactionViewModel>   m_factionViewModel;
     std::optional<Domain::Character>     m_currentCharacter;
 
     // ── Identity tab ──────────────────────────────────────────────────────────

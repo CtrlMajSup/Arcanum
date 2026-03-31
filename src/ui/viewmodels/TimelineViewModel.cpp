@@ -51,6 +51,12 @@ void TimelineViewModel::loadAll()
         // Initialise window to full world span
         m_windowStart = m_worldStart;
         m_windowEnd   = m_worldEnd;
+    }else {
+        m_logger.debug(
+            "World bounds ERROR: "
+            + boundsResult.error().message,
+            "TimelineViewModel"
+        );
     }
 
     recomputeVisibleEvents();
@@ -60,6 +66,15 @@ void TimelineViewModel::loadAll()
     m_logger.debug("Timeline loaded: "
                    + std::to_string(m_allEvents.size()) + " events",
                    "TimelineViewModel");
+ 
+    m_logger.debug(
+        QString("World bounds: %1 -> %2")
+            .arg(QString::fromStdString(boundsResult.value().first.display()))
+            .arg(QString::fromStdString(boundsResult.value().second.display()))
+            .toStdString(),
+        "TimelineViewModel"
+    );
+
 }
 
 void TimelineViewModel::loadRange(const TimePoint& from, const TimePoint& to)
@@ -83,6 +98,13 @@ void TimelineViewModel::setWindow(const TimePoint& from, const TimePoint& to)
     m_windowEnd   = to;
     recomputeVisibleEvents();
     emit windowChanged();
+
+    m_logger.debug(
+        "Window set: "
+        + from.display() + " -> " + to.display(),
+        "TimelineViewModel"
+    );
+
 }
 
 void TimelineViewModel::panBy(int years)

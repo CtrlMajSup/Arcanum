@@ -7,12 +7,12 @@
 namespace CF::UI {
 
 FactionPickerDialog::FactionPickerDialog(
-    std::shared_ptr<Services::FactionService> factionService,
+    std::shared_ptr<FactionViewModel> factionViewModel,
     QWidget* parent)
     : QDialog(parent)
-    , m_factionService(std::move(factionService))
+    , m_factionViewModel(std::move(factionViewModel))
 {
-    setWindowTitle("Choose a faction");
+    setWindowTitle("Choisir une faction");
     setFixedSize(400, 440);
     setModal(true);
     setupUi();
@@ -81,33 +81,38 @@ void FactionPickerDialog::setupConnections()
 
 void FactionPickerDialog::loadFactions(const QString& filter)
 {
-    auto result = filter.isEmpty()
-        ? m_factionService->getAll()
-        : m_factionService->search(filter.toStdString());
-
-    if (result.isErr()) return;
-
     m_list->clear();
-    for (const auto& faction : result.value()) {
+
+    const int count = m_factionViewModel->rowCount();
+    for (int i = 0; i < count; ++i) {
+        const auto faction = m_factionViewModel->factionAt(i);
+        if (!faction.has_value()) continue;
+
+        const QString name = QString::fromStdString(faction->name);
+
+        if (!filter.isEmpty() &&
+            !name.contains(filter, Qt::CaseInsensitive)) continue;
+
         auto* item = new QListWidgetItem(m_list);
 
-        QString display = QString::fromStdString(faction.name);
-        if (!faction.type.empty()) {
-            display += QString("  ·  %1")
-                .arg(QString::fromStdString(faction.type));
+        QString display = name;
+        if (!faction->type.empty()) {
+            display += "  ·  " + QString::fromStdString(faction->type);
         }
-        if (faction.dissolved.has_value()) {
-            display += "  [Dissolved]";
+        if (faction->dissolved.has_value()) {
+            display += "  [Dissoute]";
         }
 
         item->setText(display);
         item->setData(Qt::UserRole,
-                      static_cast<qlonglong>(faction.id.value()));
-        item->setToolTip(QString::fromStdString(faction.description));
+                      static_cast<qlonglong>(faction->id.value()));
+        item->setToolTip(QString::fromStdString(faction->description));
 
-        if (faction.dissolved.has_value()) {
+        // Factions dissoutes affichées en gris
+        if (faction->dissolved.has_value()) {
             item->setForeground(QColor("#6c7086"));
         }
+
         m_list->addItem(item);
     }
 }

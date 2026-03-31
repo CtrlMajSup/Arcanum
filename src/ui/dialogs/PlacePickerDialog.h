@@ -12,6 +12,7 @@
 #include "services/PlaceService.h"
 #include "domain/entities/Place.h"
 #include "ui/widgets/shared/EntityBadgeWidget.h"
+#include "ui/viewmodels/PlaceViewModel.h"
 
 namespace CF::UI {
 
@@ -26,7 +27,7 @@ class PlacePickerDialog : public QDialog {
 
 public:
     explicit PlacePickerDialog(
-        std::shared_ptr<Services::PlaceService> placeService,
+        std::shared_ptr<PlaceViewModel> placeViewModel,
         QWidget* parent = nullptr);
 
     [[nodiscard]] std::optional<Domain::PlaceId> selectedPlaceId() const;
@@ -43,6 +44,7 @@ private:
 
     std::shared_ptr<Services::PlaceService> m_placeService;
     std::optional<Domain::PlaceId>          m_selectedId;
+    std::shared_ptr<PlaceViewModel> m_placeViewModel;
 
     QLineEdit*   m_searchEdit = nullptr;
     QListWidget* m_list       = nullptr;

@@ -10,6 +10,7 @@
 
 #include "services/FactionService.h"
 #include "domain/entities/Faction.h"
+#include "ui/viewmodels/FactionViewModel.h"
 
 namespace CF::UI {
 
@@ -22,7 +23,7 @@ class FactionPickerDialog : public QDialog {
 
 public:
     explicit FactionPickerDialog(
-        std::shared_ptr<Services::FactionService> factionService,
+        std::shared_ptr<FactionViewModel> factionViewModel,
         QWidget* parent = nullptr);
 
     [[nodiscard]] std::optional<Domain::FactionId> selectedFactionId() const;
@@ -39,6 +40,7 @@ private:
 
     std::shared_ptr<Services::FactionService> m_factionService;
     std::optional<Domain::FactionId>          m_selectedId;
+    std::shared_ptr<FactionViewModel> m_factionViewModel;
 
     QLineEdit*   m_searchEdit = nullptr;
     QListWidget* m_list       = nullptr;
